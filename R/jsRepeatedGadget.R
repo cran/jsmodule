@@ -21,7 +21,8 @@
 #' @import shiny
 
 jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
-
+  requireNamespace("survival")
+  requireNamespace("survC1")
   change.vnlist = list(c(" ", "_"), c("=<", "_le_"), c("=>", "_ge_"), c("=", "_eq_"), c("\\(", "_open_"), c("\\)", "_close_"), c("%", "_percent_"), c("-", "_"), c("/", "_"),
                        c("\r\n", "_"), c(",", "_comma_"))
 
@@ -138,6 +139,20 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
                                        )
                               )
 
+                   ),
+                   navbarMenu("ROC analysis",
+                              tabPanel("Time-dependent ROC",
+                                       sidebarLayout(
+                                         sidebarPanel(
+                                           timerocUI("timeroc")
+                                         ),
+                                         mainPanel(
+                                           withLoader(plotOutput("plot_timeroc"), type="html", loader="loader6"),
+                                           ggplotdownUI("timeroc"),
+                                           withLoader(DTOutput("table_timeroc"), type="html", loader="loader6")
+                                         )
+                                       )
+                              )
                    )
   )
 
@@ -256,7 +271,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
 
 
 
-    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit)
+    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, showAllLevels = T)
 
     output$table1 <- renderDT({
       tb = out_tb1()$table
@@ -324,6 +339,18 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
     output$kaplan_plot <- renderPlot({
       print(out_kaplan())
     })
+
+    out_timeroc <- callModule(timerocModule, "timeroc", data = data, data_label = data.label, data_varStruct = NULL, id.cluster = id.gee)
+
+    output$plot_timeroc <- renderPlot({
+      print(out_timeroc()$plot)
+    })
+
+    output$table_timeroc <- renderDT({
+      datatable(out_timeroc()$tb, rownames=F, editable = F, extensions= "Buttons", caption = "ROC results",
+                options = c(jstable::opt.tbreg("roctable"), list(scrollX = TRUE)))
+    })
+
   }
 
 

@@ -21,6 +21,8 @@
 #' @import shiny
 
 jsBasicGadget <- function(data, nfactor.limit = 20) {
+  requireNamespace("survival")
+  requireNamespace("survC1")
 
   change.vnlist = list(c(" ", "_"), c("=<", "_le_"), c("=>", "_ge_"), c("=", "_eq_"), c("\\(", "_open_"), c("\\)", "_close_"), c("%", "_percent_"), c("-", "_"), c("/", "_"),
                        c("\r\n", "_"), c(",", "_comma_"))
@@ -139,6 +141,20 @@ jsBasicGadget <- function(data, nfactor.limit = 20) {
                                        )
                               )
 
+                   ),
+                   navbarMenu("ROC analysis",
+                              tabPanel("Time-dependent ROC",
+                                       sidebarLayout(
+                                         sidebarPanel(
+                                           timerocUI("timeroc")
+                                         ),
+                                         mainPanel(
+                                           withLoader(plotOutput("plot_timeroc"), type="html", loader="loader6"),
+                                           ggplotdownUI("timeroc"),
+                                           withLoader(DTOutput("table_timeroc"), type="html", loader="loader6")
+                                         )
+                                       )
+                              )
                    )
   )
 
@@ -251,12 +267,12 @@ jsBasicGadget <- function(data, nfactor.limit = 20) {
 
 
 
-    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit)
+    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, showAllLevels = T)
 
     output$table1 <- renderDT({
-      tb = out_tb1()$table
-      cap = out_tb1()$caption
-      out.tb1 = datatable(tb, rownames = T, extensions = "Buttons", caption = cap,
+      tb <- out_tb1()$table
+      cap <- out_tb1()$caption
+      out.tb1 <- datatable(tb, rownames = T, extensions = "Buttons", caption = cap,
                           options = c(jstable::opt.tb1("tb1"),
                                       list(columnDefs = list(list(visible=FALSE, targets= which(colnames(tb) %in% c("test","sig"))))
                                       ),
@@ -324,6 +340,18 @@ jsBasicGadget <- function(data, nfactor.limit = 20) {
       print(out_kaplan())
     })
 
+
+    out_timeroc <- callModule(timerocModule, "timeroc", data = data, data_label = data.label, data_varStruct = NULL)
+
+    output$plot_timeroc <- renderPlot({
+      print(out_timeroc()$plot)
+    })
+
+    output$table_timeroc <- renderDT({
+      datatable(out_timeroc()$tb, rownames=F, editable = F, extensions= "Buttons", caption = "ROC results",
+                options = c(jstable::opt.tbreg("roctable"), list(scrollX = TRUE)))
+    })
+
   }
 
 
@@ -332,6 +360,7 @@ jsBasicGadget <- function(data, nfactor.limit = 20) {
 
   #viewer <- dialogViewer("Descriptive statistics", width = 1100, height = 850)
   viewer <- browserViewer(browser = getOption("browser"))
+  #viewer <- paneViewer()
   runGadget(ui, server, viewer = viewer)
 }
 

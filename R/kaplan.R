@@ -113,6 +113,10 @@ ggplotdownUI <- function(id) {
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param design.survey Reactive survey data. default: NULL
 #' @param id.cluster Reactive cluster variable if marginal model, Default: NULL
+#' @param timeby timeby, Default: NULL
+#' @param range.x range of x axis, Default: NULL
+#' @param range.y range of y axis, Default: NULL
+#' @param pval.coord pval.coord, Default: NULL
 #' @return Shiny module server for kaplan-meier plot.
 #' @details Shiny module server for kaplan-meier plot.
 #' @examples
@@ -152,7 +156,8 @@ ggplotdownUI <- function(id) {
 #' @importFrom purrr map_lgl
 
 
-kaplanModule <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, id.cluster = NULL) {
+kaplanModule <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, id.cluster = NULL,
+                         timeby = NULL, range.x = NULL, range.y = NULL, pval.coord = NULL) {
 
   ## To remove NOTE.
   level <- val_label <- variable <- NULL
@@ -448,14 +453,28 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         }
       }
 
+      value.timeby <- signif(xmax/7, 1)
+      if (!is.null(timeby)){
+        value.timeby <- timeby
+      }
+
+      if(is.null(range.x)){
+        range.x <- c(0, xmax)
+      }
+      if(is.null(range.y)){
+        range.y <- c(0, 1)
+      }
+
+
+
       tagList(
         sliderInput(session$ns("timeby"), "Time by",
-                    min = 1, max = xmax, value = signif(xmax/7, 1)),
+                    min = 1, max = xmax, value = value.timeby, step = 5),
 
         sliderInput(session$ns("xlims"), "X axis range(time)",
-                    min = 0, max = xmax, value = c(0, xmax)),
+                    min = 0, max = xmax, value = range.x, step = 5),
         sliderInput(session$ns("ylims"), "Y axis range(probability)",
-                    min = 0, max = 1, value = c(0, 1))
+                    min = 0, max = 1, value = range.y , step = 0.05)
       )
     })
   })
@@ -475,18 +494,18 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       if (is.null(id.cluster)){
         return(
           jskm::jskm(res.km, pval = input$pval, mark=F, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                     cumhaz= input$cumhaz, cluster.option = "None", cluster.var = NULL, data = data.km)
+                     cumhaz= input$cumhaz, cluster.option = "None", cluster.var = NULL, data = data.km, pval.coord = pval.coord)
         )
       } else{
         return(
           jskm::jskm(res.km, pval = input$pval, mark=F, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                     cumhaz= input$cumhaz, cluster.option = "cluster", cluster.var = id.cluster(), data = data.km)
+                     cumhaz= input$cumhaz, cluster.option = "cluster", cluster.var = id.cluster(), data = data.km, pval.coord = pval.coord)
         )
       }
     } else{
       return(
         jskm::svyjskm(res.km, pval = input$pval, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                      cumhaz= input$cumhaz, design = data.km)
+                      cumhaz= input$cumhaz, design = data.km, pval.coord = pval.coord)
       )
     }
   })
