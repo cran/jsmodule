@@ -1,7 +1,11 @@
+# jsmodule 0.8.5
+
+* **Keep original variable's name** in tables/figures
+
+
 # jsmodule 0.8.4
 
 * Change default **step of x-axis range**.
-
 
 # jsmodule 0.8.3
 
