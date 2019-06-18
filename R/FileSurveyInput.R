@@ -293,7 +293,9 @@ FileSurvey <- function(input, output, session, nfactor.limit = 20) {
       out <- out[!is.na(get(input$weights_vname))]
     }
 
-    surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+    #surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+    surveydata <- tryCatch(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out),
+                           error = function(e){return(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out, nest = T))})
 
 
     ref <- data()$ref
@@ -314,7 +316,9 @@ FileSurvey <- function(input, output, session, nfactor.limit = 20) {
 
         if (input$var_subset %in% var.factor){
           out <- out[get(input$var_subset) %in% input$val_subset]
-          surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+          #surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+          surveydata <- tryCatch(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out),
+                                 error = function(e){return(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out, nest = T))})
           #var.factor <- c(data()$factor_original, input$factor_vname)
           out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
           out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
@@ -323,7 +327,10 @@ FileSurvey <- function(input, output, session, nfactor.limit = 20) {
           out.label <- out.label[out.label2]
         } else{
           out <- out[get(input$var_subset) >= input$val_subset[1] & get(input$var_subset) <= input$val_subset[2]]
-          surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+          #surveydata <- survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out)
+          surveydata <- tryCatch(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out),
+                                 error = function(e){return(survey::svydesign(id = cluster.survey, strata = strata.survey, weights = weights.survey, data = out, nest = T))})
+
           #var.factor <- c(data()$factor_original, input$factor_vname)
           out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
           out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
