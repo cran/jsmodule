@@ -108,7 +108,7 @@ GEEModuleUI <- function(id) {
 #' @import shiny
 #' @importFrom data.table data.table .SD :=
 #' @importFrom labelled var_label<-
-#' @importFrom stats glm as.formula model.frame
+#' @importFrom stats glm as.formula model.frame complete.cases
 #' @importFrom epiDisplay regress.display
 #' @importFrom purrr map_lgl
 #' @importFrom geepack geeglm
@@ -241,7 +241,7 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
   out <- reactive({
     data.regress <- data()
     label.regress <- data_label()
-    id <- id.gee()
+    idgee_Plz_Noduplicate <- id.gee()
     if(input$regressUI_subcheck == T){
       req(input$subvar_regress)
       if (input$subvar_regress %in% vlist()$factor_vars){
@@ -271,9 +271,10 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
       need(sum(lgl.1level) == 0, paste(paste(names(lgl.1level)[lgl.1level], collapse =" ,"), "has(have) a unique value. Please remove that from independent variables"))
     )
 
-    res.gee <- geepack::geeglm(form, data = data.regress, family = "gaussian", id = get(id), corstr = "exchangeable")
+    nomiss <- stats::complete.cases(data.regress[, c(y, xs), with = F])
+    res.gee <- geepack::geeglm(form, data = data.regress[nomiss, ], family = "gaussian", id = get(idgee_Plz_Noduplicate), corstr = "exchangeable")
     info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
-    info.gee$caption = gsub("id", id, info.gee$caption)
+    info.gee$caption <- gsub("idgee_Plz_Noduplicate", idgee_Plz_Noduplicate, info.gee$caption)
     ltb.gee <- jstable::LabeljsGeeglm(info.gee, ref = label.regress)
     out.tb <- rbind(ltb.gee$table, ltb.gee$metric)
     cap.gee <- ltb.gee$caption
@@ -348,7 +349,7 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 #' @import shiny
 #' @importFrom data.table data.table .SD :=
 #' @importFrom labelled var_label<-
-#' @importFrom stats glm as.formula model.frame
+#' @importFrom stats glm as.formula model.frame complete.cases
 #' @importFrom epiDisplay regress.display
 #' @importFrom purrr map_lgl
 #' @importFrom geepack geeglm
@@ -478,9 +479,11 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
 
 
   out <- reactive({
+    req(input$dep_vars)
+    req(input$indep_vars)
     data.logistic <- data()
     label.regress <- data_label()
-    id <- id.gee()
+    idgee_Plz_Noduplicate <- id.gee()
     if(input$regressUI_subcheck == T){
       req(input$subvar_regress)
       if (input$subvar_regress %in% vlist()$factor_vars){
@@ -512,9 +515,10 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
       need(sum(lgl.1level) == 0, paste(paste(names(lgl.1level)[lgl.1level], collapse =" ,"), "has(have) a unique value. Please remove that from independent variables"))
     )
 
-    res.gee <- geepack::geeglm(form, data = data.logistic, family = "binomial", id = get(id), corstr = "exchangeable")
+    nomiss <- stats::complete.cases(data.logistic[, c(y, xs), with = F])
+    res.gee <- geepack::geeglm(form, data = data.logistic[nomiss, ], family = "binomial", id = get(idgee_Plz_Noduplicate), corstr = "exchangeable")
     info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
-    info.gee$caption = gsub("id", id, info.gee$caption)
+    info.gee$caption = gsub("idgee_Plz_Noduplicate", idgee_Plz_Noduplicate, info.gee$caption)
     ltb.gee <- jstable::LabeljsGeeglm(info.gee, ref = label.regress)
     out.tb <- rbind(ltb.gee$table, ltb.gee$metric)
     cap.gee <- ltb.gee$caption

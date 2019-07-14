@@ -177,7 +177,7 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
 
     conti_vars <- setdiff(names(out), factor_vars)
     nclass <- unlist(out[, lapply(.SD, function(x){length(unique(x))}), .SDcols = conti_vars])
-    factor_adds_list = mklist(data_varStruct, names(nclass)[(nclass <= 20) & (nclass < nrow(out))])
+    factor_adds_list = mklist(data_varStruct, names(nclass)[(nclass <= nfactor.limit) & (nclass < nrow(out))])
 
     except_vars <- names(nclass)[ nclass== 1 | nclass >= nfactor.limit]
     add_vars <- names(nclass)[nclass >= 1 &  nclass <= 5]
@@ -190,6 +190,7 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
 
   output$pcut <- renderUI({
     if (is.null(input$file)){return(NULL)}
+
     radioButtons(session$ns("pcut_ps"), label = "Default p-value cut for ps calculation",
                  choices = c(0.05, 0.1, 0.2),
                  selected = 0.1, inline =T)
@@ -257,9 +258,17 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
   data <- reactive({
     out <- data.info()$data
     out[, (data.info()$conti_original) := lapply(.SD, function(x){as.numeric(as.vector(x))}), .SDcols = data.info()$conti_original]
-    if (!is.null(input$factor_vname)){
+    if (length(input$factor_vname) > 0){
       out[, (input$factor_vname) := lapply(.SD, as.factor), .SDcols= input$factor_vname]
     }
+
+    ref <- data.info()$ref
+    out.label <- mk.lev(out)
+    for (vn in ref[["name.new"]]){
+      w <- which(ref[["name.new"]] == vn)
+      out.label[variable == vn, var_label := ref[["name.old"]][w]]
+    }
+
     if (!is.null(input$check_subset)){
       if (input$check_subset){
         validate(
@@ -273,35 +282,35 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
           out <- out[get(input$var_subset) %in% input$val_subset]
           #var.factor <- c(data()$factor_original, input$factor_vname)
           out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+          out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
+          data.table::setkey(out.label, "variable", "class", "level")
+          data.table::setkey(out.label2, "variable", "class", "level")
+          out.label <- out.label[out.label2]
 
         } else{
           out <- out[get(input$var_subset) >= input$val_subset[1] & get(input$var_subset) <= input$val_subset[2]]
           #var.factor <- c(data()$factor_original, input$factor_vname)
           out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+          out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
+          data.table::setkey(out.label, "variable", "class", "level")
+          data.table::setkey(out.label2, "variable", "class", "level")
+          out.label <- out.label[out.label2]
         }
 
       }
     }
-    return(out)
+    return(list(data = out, label = out.label))
     })
 
-  data.label <- eventReactive(data(), {
-    labeldata <- mk.lev(data())
-    for (vn in data.info()$ref[["name.new"]]){
-      w <- which(data.info()$ref[["name.new"]] == vn)
-      labeldata[variable ==vn, var_label := data.info()$ref[["name.old"]][w]]
-    }
 
-    return(labeldata)
-    })
 
   output$group_ps <- renderUI({
-    factor_vars <- names(data())[data()[, lapply(.SD, class) %in% c("factor", "character")]]
+    factor_vars <- names(data()$data)[data()$data[, lapply(.SD, class) %in% c("factor", "character")]]
     validate(
       need(!is.null(factor_vars) & length(factor_vars) > 0, "No categorical variables in data")
     )
 
-    class01_factor <- unlist(data()[, lapply(.SD, function(x){identical(levels(x), c("0", "1"))}), .SDcols = factor_vars])
+    class01_factor <- unlist(data()$data[, lapply(.SD, function(x){identical(levels(x), c("0", "1"))}), .SDcols = factor_vars])
     #nclass_factor <- unlist(data()[, lapply(.SD, function(x){length(unique(x))}), .SDcols = factor_vars])
     #factor_2vars <- names(nclass_factor)[nclass_factor == 2]
 
@@ -311,7 +320,11 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
     )
 
     factor_01vars <- factor_vars[class01_factor]
-    factor_01vars_case_small <- factor_01vars[unlist(sapply(factor_01vars, function(x){diff(table(data()[[x]])) <= 0}))]
+    factor_01vars_case_small <- factor_01vars[unlist(sapply(factor_01vars, function(x){diff(table(data()$data[[x]])) <= 0}))]
+
+    validate(
+      need(length(factor_01vars_case_small) > 0, "No candidate group variable for PS calculation")
+    )
 
     selectInput(session$ns("group_pscal"), label = "Group variable for PS calculation (0, 1 coding)",
                 choices = mklist(data.info()$data_varStruct, factor_01vars_case_small), multiple = F,
@@ -327,11 +340,11 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
         need(length(input$group_pscal) != 0, "No group variables in data")
       )
 
-      vars <- setdiff(setdiff(names(data()), data.info()$except_vars),  c(input$var_subset, input$group_pscal))
+      vars <- setdiff(setdiff(names(data()$data), data.info()$except_vars),  c(input$var_subset, input$group_pscal))
       varsIni <- sapply(vars,
                         function(v){
                           forms <- as.formula(paste(input$group_pscal, "~", v))
-                          coef <- summary(glm(forms, data = data(), family = binomial))$coefficients
+                          coef <- tryCatch(summary(glm(forms, data = data()$data, family = binomial))$coefficients, error = function(e){return(NULL)})
                           sigOK <- !all(coef[-1, 4] > as.numeric(input$pcut_ps))
                           return(sigOK)
                         })
@@ -351,10 +364,10 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
     }
 
     forms <- as.formula(paste(input$group_pscal, " ~ ", paste(input$indep_pscal, collapse = "+"), sep=""))
-    m.out <- MatchIt::matchit(forms, data = data())
+    m.out <- MatchIt::matchit(forms, data = data()$data)
     pscore <- m.out$distance
     iptw <- ifelse(m.out$treat == levels(m.out$treat)[2], 1/pscore,  1/(1-pscore))
-    wdata <- cbind(data(), pscore, iptw)
+    wdata <- cbind(data()$data, pscore, iptw)
 
     mdata <- MatchIt::match.data(m.out, distance = "pscore")
     return(list(data = wdata, matdata = mdata[, -grep("weights", names(mdata))]))
@@ -370,7 +383,7 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
   })
 
   outdata <- reactive({
-    list(data = mat.info()$data, matdata = mat.info()$matdata, data.label = data.label(), naomit = naomit(), group_var = input$group_pscal)
+    list(data = mat.info()$data, matdata = mat.info()$matdata, data.label = data()$label, naomit = naomit(), group_var = input$group_pscal)
   })
 
 

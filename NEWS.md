@@ -1,3 +1,42 @@
+# jsmodule 0.9.9
+
+## New addins
+
+* Basic statistics with external file: `jsBasicExtAddin`
+
+* Propensity score analysis with external file: `jsPropensityExtAddin`
+
+* Repeated measure analysis with external file: `jsRepeatedExtAddin`
+
+* Survey data analysis with external file: `jsSurveyExtAddin`
+
+## Bug fixes
+
+* Regression/Logistic model in `jsSurveyAddin`.
+
+* **Id** issue in repeated measure analysis.
+
+# jsmodule 0.9.3
+
+## Update: Propensity score analysis
+
+* Add scatterplot, ROC/time-dependent ROD analysis.
+
+## Bug fixes: repeated measure analysis 
+
+* Error if repeated measure variable is **id**.
+
+* Error if there are missing values.
+
+## Bug fixes: survey data analysis
+
+* Error in **ROC** analysis
+
+## Bug fixes: Table 1
+
+* `data.frame` vs `data.table` issue.
+
+
 # jsmodule 0.9.2
 
 * Bug fixes: Apply nested survey design to `jsSurveyGadget` and `FileSurveyInput`
