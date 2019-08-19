@@ -45,8 +45,8 @@ rocUI <- function(id) {
 
   tagList(
     uiOutput(ns("event")),
-    uiOutput(ns("nmodel")),
     uiOutput(ns("indep")),
+    uiOutput(ns("addmodel")),
     checkboxInput(ns("subcheck"), "Sub-group analysis"),
     uiOutput(ns("subvar")),
     uiOutput(ns("subval"))
@@ -86,29 +86,29 @@ reclassificationJS <- function (data, cOutcome, predrisk1, predrisk2, cutoff, de
   c2 <- cut(predrisk2, breaks = cutoff, include.lowest = TRUE,
             right = FALSE)
   tabReclas <- table(`Initial Model` = c1, `Updated Model` = c2)
-  cat(" _________________________________________\n")
-  cat(" \n     Reclassification table    \n")
-  cat(" _________________________________________\n")
+  #cat(" _________________________________________\n")
+  #cat(" \n     Reclassification table    \n")
+  #cat(" _________________________________________\n")
   ta <- table(c1, c2, data[, cOutcome])
-  cat("\n Outcome: absent \n  \n")
+  #cat("\n Outcome: absent \n  \n")
   TabAbs <- ta[, , 1]
   tab1 <- cbind(TabAbs, ` % reclassified` = round((rowSums(TabAbs) -
                                                      diag(TabAbs))/rowSums(TabAbs), 2) * 100)
   names(dimnames(tab1)) <- c("Initial Model", "Updated Model")
-  print(tab1)
-  cat("\n \n Outcome: present \n  \n")
+  #print(tab1)
+  #cat("\n \n Outcome: present \n  \n")
   TabPre <- ta[, , 2]
   tab2 <- cbind(TabPre, ` % reclassified` = round((rowSums(TabPre) -
                                                      diag(TabPre))/rowSums(TabPre), 2) * 100)
   names(dimnames(tab2)) <- c("Initial Model", "Updated Model")
-  print(tab2)
-  cat("\n \n Combined Data \n  \n")
+  #print(tab2)
+  #cat("\n \n Combined Data \n  \n")
   Tab <- tabReclas
   tab <- cbind(Tab, ` % reclassified` = round((rowSums(Tab) -
                                                  diag(Tab))/rowSums(Tab), 2) * 100)
   names(dimnames(tab)) <- c("Initial Model", "Updated Model")
-  print(tab)
-  cat(" _________________________________________\n")
+  #print(tab)
+  #cat(" _________________________________________\n")
   c11 <- factor(c1, levels = levels(c1), labels = c(1:length(levels(c1))))
   c22 <- factor(c2, levels = levels(c2), labels = c(1:length(levels(c2))))
   x <- Hmisc::improveProb(x1 = as.numeric(c11) * (1/(length(levels(c11)))),
@@ -116,18 +116,18 @@ reclassificationJS <- function (data, cOutcome, predrisk1, predrisk2, cutoff, de
                                                                                      cOutcome])
   y <- Hmisc::improveProb(x1 = predrisk1, x2 = predrisk2, y = data[,
                                                                    cOutcome])
-  cat("\n NRI(Categorical) [95% CI]:", round(x$nri, 4), "[",
-      round(x$nri - 1.96 * x$se.nri, 4), "-", round(x$nri +
-                                                      1.96 * x$se.nri, 4), "]", "; p-value:", round(2 *
-                                                                                                      pnorm(-abs(x$z.nri)), 5), "\n")
-  cat(" NRI(Continuous) [95% CI]:", round(y$nri, 4), "[", round(y$nri -
-                                                                  1.96 * y$se.nri, 4), "-", round(y$nri + 1.96 * y$se.nri,
-                                                                                                  4), "]", "; p-value:", round(2 * pnorm(-abs(y$z.nri)),
-                                                                                                                               5), "\n")
-  cat(" IDI [95% CI]:", round(y$idi, 4), "[", round(y$idi -
-                                                      1.96 * y$se.idi, 4), "-", round(y$idi + 1.96 * y$se.idi,
-                                                                                      4), "]", "; p-value:", round(2 * pnorm(-abs(y$z.idi)),
-                                                                                                                   5), "\n")
+  #cat("\n NRI(Categorical) [95% CI]:", round(x$nri, 4), "[",
+  #    round(x$nri - 1.96 * x$se.nri, 4), "-", round(x$nri +
+  #                                                    1.96 * x$se.nri, 4), "]", "; p-value:", round(2 *
+  #                                                                                                    pnorm(-abs(x$z.nri)), 5), "\n")
+  #cat(" NRI(Continuous) [95% CI]:", round(y$nri, 4), "[", round(y$nri -
+  #                                                                1.96 * y$se.nri, 4), "-", round(y$nri + 1.96 * y$se.nri,
+  #                                                                                                4), "]", "; p-value:", round(2 * pnorm(-abs(y$z.nri)),
+  #                                                                                                                             5), "\n")
+  #cat(" IDI [95% CI]:", round(y$idi, 4), "[", round(y$idi -
+  #                                                    1.96 * y$se.idi, 4), "-", round(y$idi + 1.96 * y$se.idi,
+  #                                                                                    4), "]", "; p-value:", round(2 * pnorm(-abs(y$z.idi)),
+  #                                                                                                                 5), "\n")
 
   value <- round(c(x$nri, y$nri,y$idi), dec.value)
   lowerCI <- round(c(x$nri, y$nri,y$idi) - qnorm(0.975 ) * c(x$se.nri, y$se.nri, y$se.idi), dec.value)
@@ -343,12 +343,23 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
     )
   })
 
-  output$nmodel <- renderUI({
-    sliderInput(session$ns("n_model"), "Number of models", value = 2, min = 1, max = 5)
 
+  nmodel <- reactiveVal(1)
+
+
+  output$addmodel <- renderUI({
+    if (nmodel() <= 1){
+      actionButton(session$ns("add"), label = "Add model", icon("plus"), class = "btn-primary")
+    } else if (nmodel() > 1){
+      tagList(
+        actionButton(session$ns("add"), label = "Add model", icon("plus"), class = "btn-primary"),
+        actionButton(session$ns("rmv"), label = "Remove model", icon("minus"))
+      )
+    }
   })
 
-  output$indep <- renderUI({
+
+  indeproc <- reactive({
     req(!is.null(input$event_roc))
     mklist <- function(varlist, vars){
       lapply(varlist,
@@ -369,17 +380,40 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
     } else{
       indep.roc <- setdiff(names(data()), c(vlist()$except_vars, input$event_roc ))
     }
-
-    dynamic_selection_list <- lapply(1:input$n_model, function(i) {
-      selectInput(session$ns(paste0("indep_roc", i)), paste0("Independent variables for Model ", i),
-                  choices = mklist(data_varStruct(), indep.roc), multiple = T,
-                  selected = unlist(mklist(data_varStruct(), indep.roc))[1]
-                  )
-    })
-
+    return(indep.roc)
   })
 
-  indeps <-  reactive(lapply(1:input$n_model, function(i){input[[paste0("indep_roc", i)]]}))
+
+  output$indep <- renderUI({
+    selectInput(session$ns(paste0("indep_roc", 1)), paste0("Independent variables for Model ", 1),
+                choices = mklist(data_varStruct(), indeproc()), multiple = T,
+                selected = unlist(mklist(data_varStruct(), indeproc()))[1])
+  })
+
+  observeEvent(input$add, {
+    insertUI(
+      selector = paste0("div:has(> #", session$ns("add"), ")"),
+      where = "beforeBegin",
+      ui = selectInput(session$ns(paste0("indep_roc", nmodel() + 1)), paste0("Independent variables for Model ", nmodel() + 1),
+                       choices = mklist(data_varStruct(), indeproc()), multiple = T,
+                       selected = unlist(mklist(data_varStruct(), indeproc()))[1:min(length(indeproc()), nmodel() + 1)])
+    )
+    nmodel(nmodel() + 1)
+  })
+
+  observeEvent(input$rmv, {
+    removeUI(
+      selector = paste0("div:has(>> #", session$ns(paste0("indep_roc", nmodel())), ")")
+    )
+    nmodel(nmodel() - 1)
+  })
+
+
+
+
+  indeps <-  reactive(lapply(1:nmodel(), function(i){input[[paste0("indep_roc", i)]]}))
+
+
 
 
 
@@ -401,8 +435,8 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
       )
 
       tagList(
-        selectInput(session$ns("subvar_roc"), "Sub-group variable",
-                    choices = var_subgroup_list, multiple = F,
+        selectInput(session$ns("subvar_roc"), "Sub-group variables",
+                    choices = var_subgroup_list, multiple = T,
                     selected = var_subgroup[1])
       )
 
@@ -414,18 +448,25 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
 
   output$subval <- renderUI({
     req(input$subcheck == T)
-    req(input$subvar_roc)
+    req(length(input$subvar_roc) > 0)
 
-    if (input$subvar_roc %in% vlist()$factor_vars){
-      selectInput(session$ns("subval_roc"), "Sub-group value",
-                  choices = data_label()[variable == input$subvar_roc, level], multiple = T,
-                  selected = data_label()[variable == input$subvar_roc, level][1])
-    } else{
-      val <- stats::quantile(data()[[input$subvar_roc]], na.rm = T)
-      sliderInput(session$ns("subval_roc"), "Sub-group range",
-                  min = val[1], max = val[5],
-                  value = c(val[2], val[4]))
+    outUI <- tagList()
+
+    for (v in seq_along(input$subvar_roc)){
+      if (input$subvar_roc[[v]] %in% vlist()$factor_vars){
+        outUI[[v]] <- selectInput(session$ns(paste0("subval_roc", v)), paste0("Sub-group value: ", input$subvar_roc[[v]]),
+                                  choices = data_label()[variable == input$subvar_roc[[v]], level], multiple = T,
+                                  selected = data_label()[variable == input$subvar_roc[[v]], level][1])
+      } else{
+        val <- stats::quantile(data()[[input$subvar_roc[[v]]]], na.rm = T)
+        outUI[[v]] <- sliderInput(session$ns(paste0("subval_roc", v)), paste0("Sub-group range: ", input$subvar_roc[[v]]),
+                                  min = val[1], max = val[5],
+                                  value = c(val[2], val[4]))
+      }
+
     }
+    outUI
+
 
   })
 
@@ -434,9 +475,9 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
   rocList <- reactive({
     req(!is.null(input$event_roc))
 
-    for (i in 1:input$n_model){req(!is.null(input[[paste0("indep_roc", i)]]))}
+    for (i in 1:nmodel()){req(!is.null(input[[paste0("indep_roc", i)]]))}
     req(!is.null(indeps()))
-    collapse.indep <- sapply(1:input$n_model, function(i){paste0(input[[paste0("indep_roc", i)]], collapse = "")})
+    collapse.indep <- sapply(1:nmodel(), function(i){paste0(input[[paste0("indep_roc", i)]], collapse = "")})
     validate(
       need(anyDuplicated(collapse.indep) == 0, "Please select different models")
     )
@@ -445,13 +486,20 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
     label.regress <- data_label()
     data.roc[[input$event_roc]] <- as.numeric(as.vector(data.roc[[input$event_roc]]))
     if(input$subcheck == TRUE){
-      req(input$subvar_roc)
-      req(input$subval_roc)
-      if (input$subvar_roc %in% vlist()$factor_vars){
-        data.roc <- data.roc[get(input$subvar_roc) %in% input$subval_roc]
-      } else{
-        data.roc <- data.roc[get(input$subvar_roc) >= input$subval_roc[1] & get(input$subvar_roc) <= input$subval_roc[2]]
+      validate(
+        need(length(input$subvar_roc) > 0 , "No variables for subsetting"),
+        need(all(sapply(1:length(input$subvar_roc), function(x){length(input[[paste0("subval_roc", x)]])})), "No value for subsetting")
+      )
+
+      for (v in seq_along(input$subvar_roc)){
+        if (input$subvar_roc[[v]] %in% vlist()$factor_vars){
+          data.roc <- data.roc[get(input$subvar_roc[[v]]) %in% input[[paste0("subval_roc", v)]]]
+        } else{
+          data.roc <- data.roc[get(input$subvar_roc[[v]]) >= input[[paste0("subval_roc", v)]][1] & get(input$subvar_roc[[v]]) <= input[[paste0("subval_roc", v)]][2]]
+        }
       }
+
+
       data.roc[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
       label.regress2 <- mk.lev(data.roc)[, c("variable", "class", "level")]
       data.table::setkey(data_label(), "variable", "class", "level")
@@ -485,14 +533,20 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
       label.regress <- data_label()
       data.design$variables[[input$event_roc]] <- as.numeric(as.vector(data.design$variables[[input$event_roc]]))
       if(input$subcheck == TRUE){
-        req(input$subvar_roc)
-        req(input$subval_roc)
+        validate(
+          need(length(input$subvar_roc) > 0 , "No variables for subsetting"),
+          need(all(sapply(1:length(input$subvar_roc), function(x){length(input[[paste0("subval_roc", x)]])})), "No value for subsetting")
+        )
 
-        if (input$subvar_roc %in% vlist()$factor_vars){
-          data.design <- subset(data.design, get(input$subvar_roc) %in% input$subval_roc)
-        } else{
-          data.design <- subset(data.design, get(input$subvar_roc) >= input$subval_roc[1] & get(input$subvar_roc) <= input$subval_roc[2])
+        for (v in seq_along(input$subvar_roc)){
+          if (input$subvar_roc[[v]] %in% vlist()$factor_vars){
+            data.design <- subset(data.design, get(input$subvar_roc[[v]]) %in% input[[paste0("subval_roc", v)]])
+          } else{
+            data.design <- subset(data.design, get(input$subvar_roc[[v]]) >= input[[paste0("subval_roc", v)]][1] & get(input$subvar_roc[[v]]) <= input[[paste0("subval_roc", v)]][2])
+          }
         }
+
+
         data.design$variables[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
         label.regress2 <- mk.lev(data.design$variables)[, c("variable", "class", "level")]
         data.table::setkey(data_label(), "variable", "class", "level")
@@ -511,7 +565,7 @@ rocModule <- function(input, output, session, data, data_label, data_varStruct =
 
 
     p <- pROC::ggroc(res.roc) + see::theme_modern() + geom_abline(slope = 1, intercept = 1, lty = 2) +
-      xlab("Specificity") + ylab("Sensitivity") + scale_color_discrete("Model", labels = paste("Model", 1:input$n_model))
+      xlab("Specificity") + ylab("Sensitivity") + scale_color_discrete("Model", labels = paste("Model", 1:nmodel()))
 
     return(list(plot = p, tb = res.tb))
   })

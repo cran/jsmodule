@@ -43,6 +43,8 @@ kaplanUI <- function(id) {
     checkboxInput(ns("cumhaz"), "Show cumulative hazard", F),
     checkboxInput(ns("pval"), "Show p-value(log-rank test)", T),
     checkboxInput(ns("table"), "Show table", T),
+    checkboxInput(ns("ci"), "Show 95% CI", F),
+    checkboxInput(ns("marks"), "Show censoring marks", F),
     checkboxInput(ns("subcheck"), "Sub-group analysis"),
     uiOutput(ns("ranges")),
     uiOutput(ns("subvar")),
@@ -207,7 +209,7 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
                          timeby = NULL, range.x = NULL, range.y = NULL) {
 
   ## To remove NOTE.
-  level <- val_label <- variable <- NULL
+  brewer.pal.info <- level <- val_label <- variable <- NULL
 
   if (is.null(data_varStruct)){
     data_varStruct <- reactive(list(variable = names(data())))
@@ -280,6 +282,8 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
     )
   })
 
+
+
   output$indep <- renderUI({
     req(!is.null(input$event_km))
     req(!is.null(input$time_km))
@@ -296,9 +300,9 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
 
 
     if (!is.null(design.survey)){
-      indep.km <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, input$time_km, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
+      indep.km <- setdiff(names(data()), c(vlist()$except_vars, input$event_km, input$time_km, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
     } else if (!is.null(id.cluster)){
-      indep.km <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, input$time_km, id.cluster()))
+      indep.km <- setdiff(names(data()), c(vlist()$except_vars, input$event_km, input$time_km, id.cluster()))
     } else{
       indep.km <- setdiff(names(data()), c(vlist()$except_vars, input$event_km, input$time_km ))
     }
@@ -317,7 +321,12 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       if (input$indep_km %in% c("None", vlist()$factor_vars)){
         return(NULL)
       } else if (!is.null(design.survey) | !is.null(id.cluster)){
-        return(NULL)
+        req(!is.null(input$event_km))
+        req(!is.null(input$time_km))
+        vec.indep <- data()[[input$indep_km]][!is.na(data()[[input$indep_km]])]
+        tagList(
+          numericInput(session$ns("cut5"), "Cut-off", value = median(vec.indep), min = quantile(vec.indep, 0.05), max = quantile(vec.indep, 0.95))
+        )
       } else{
         req(!is.null(input$event_km))
         req(!is.null(input$time_km))
@@ -325,11 +334,9 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         data.km[[input$event_km]] <- as.numeric(as.vector(data.km[[input$event_km]]))
         mstat <- maxstat::maxstat.test(as.formula(paste("survival::Surv(",input$time_km,",", input$event_km,") ~ ", input$indep_km, sep="")), data= data.km, smethod="LogRank", pmethod="condMC", B=999)
         cut5 <- mstat$cuts[order(-mstat$stats)][1:5]
+        vec.indep <- data.km[[input$indep_km]][!is.na(data.km[[input$indep_km]])]
         tagList(
-          selectizeInput(session$ns("cut5"), "Best cut (Top 5)",
-                         choices = cut5, multiple = F,
-                         selected = cut5[1]
-          )
+          numericInput(session$ns("cut5"), "Cut-off", value = cut5[1], min = min(cut5[1], quantile(vec.indep, 0.05)), max = max(cut5[1], quantile(vec.indep, 0.95)))
         )
       }
     })
@@ -358,8 +365,8 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       )
 
       tagList(
-        selectInput(session$ns("subvar_km"), "Sub-group variable",
-                    choices = var_subgroup_list, multiple = F,
+        selectInput(session$ns("subvar_km"), "Sub-group variables",
+                    choices = var_subgroup_list, multiple = T,
                     selected = var_subgroup[1])
       )
 
@@ -371,18 +378,24 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
 
   output$subval <- renderUI({
     req(input$subcheck == T)
-    req(input$subvar_km)
+    req(length(input$subvar_km) > 0)
 
-    if (input$subvar_km %in% vlist()$factor_vars){
-      selectInput(session$ns("subval_km"), "Sub-group value",
-                  choices = data_label()[variable == input$subvar_km, level], multiple = T,
-                  selected = data_label()[variable == input$subvar_km, level][1])
-    } else{
-      val <- stats::quantile(data()[[input$subvar_km]], na.rm = T)
-      sliderInput(session$ns("subval_km"), "Sub-group range",
-                  min = val[1], max = val[5],
-                  value = c(val[2], val[4]))
+    outUI <- tagList()
+
+    for (v in seq_along(input$subvar_km)){
+      if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+        outUI[[v]] <- selectInput(session$ns(paste0("subval_km", v)), paste0("Sub-group value: ", input$subvar_km[[v]]),
+                                  choices = data_label()[variable == input$subvar_km[[v]], level], multiple = T,
+                                  selected = data_label()[variable == input$subvar_km[[v]], level][1])
+      } else{
+        val <- stats::quantile(data()[[input$subvar_km[[v]]]], na.rm = T)
+        outUI[[v]] <- sliderInput(session$ns(paste0("subval_km", v)), paste0("Sub-group range: ", input$subvar_km[[v]]),
+                                  min = val[1], max = val[5],
+                                  value = c(val[2], val[4]))
+      }
+
     }
+    outUI
 
   })
 
@@ -414,13 +427,19 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
     label.regress <- data_label()
     data.km[[input$event_km]] <- as.numeric(as.vector(data.km[[input$event_km]]))
     if(input$subcheck == T){
-      req(input$subvar_km)
-      req(input$subval_km)
-      if (input$subvar_km %in% vlist()$factor_vars){
-        data.km <- data.km[get(input$subvar_km) %in% input$subval_km]
-      } else{
-        data.km <- data.km[get(input$subvar_km) >= input$subval_km[1] & get(input$subvar_km) <= input$subval_km[2]]
+      validate(
+        need(length(input$subvar_km) > 0 , "No variables for subsetting"),
+        need(all(sapply(1:length(input$subvar_km), function(x){length(input[[paste0("subval_km", x)]])})), "No value for subsetting")
+      )
+
+      for (v in seq_along(input$subvar_km)){
+        if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+          data.km <- data.km[get(input$subvar_km[[v]]) %in% input[[paste0("subval_km", v)]]]
+        } else{
+          data.km <- data.km[get(input$subvar_km[[v]]) >= input[[paste0("subval_km", v)]][1] & get(input$subvar_km[[v]]) <= input[[paste0("subval_km", v)]][2]]
+        }
       }
+
       data.km[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
       label.regress2 <- mk.lev(data.km)[, c("variable", "class", "level")]
       data.table::setkey(data_label(), "variable", "class", "level")
@@ -460,14 +479,20 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       label.regress <- data_label()
       data.design$variables[[input$event_km]] <- as.numeric(as.vector(data.design$variables[[input$event_km]]))
       if(input$subcheck == T){
-        req(input$subvar_km)
-        req(input$subval_km)
+        validate(
+          need(length(input$subvar_km) > 0 , "No variables for subsetting"),
+          need(all(sapply(1:length(input$subvar_km), function(x){length(input[[paste0("subval_km", x)]])})), "No value for subsetting")
+        )
 
-        if (input$subvar_km %in% vlist()$factor_vars){
-          data.design <- subset(data.design, get(input$subvar_km) %in% input$subval_km)
-        } else{
-          data.design <- subset(data.design, get(input$subvar_km) >= input$subval_km[1] & get(input$subvar_km) <= input$subval_km[2])
+        for (v in seq_along(input$subvar_km)){
+          if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+            data.design <- subset(data.design, get(input$subvar_km[[v]]) %in% input[[paste0("subval_km", v)]])
+          } else{
+            data.design <- subset(data.design, get(input$subvar_km[[v]]) >= input[[paste0("subval_km", v)]][1] & get(input$subvar_km[[v]]) <= input[[paste0("subval_km", v)]][2])
+          }
         }
+
+
         data.design$variables[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
         label.regress2 <- mk.lev(data.design$variables)[, c("variable", "class", "level")]
         data.table::setkey(data_label(), "variable", "class", "level")
@@ -476,14 +501,22 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         data.design$variables[[input$event_km]] <- as.numeric(as.vector(data.design$variables[[input$event_km]]))
 
       }
-      cc <- substitute(survey::svykm(.form, design= data.design, se = F), list(.form= form.km()))
+
+      if (input$indep_km %in% vlist()$conti_vars){
+        data.design$variables$xcat <- ifelse(data.design$variables[[input$indep_km]] > input$cut5, 1, 0)
+      }
+
+      cc <- substitute(survey::svykm(.form, design= data.design, se = input$ci), list(.form= form.km()))
       res.km <- eval(cc)
       if (input$indep_km == "None"){
         yst.name <- ""
         yst.lab <- "All"
-      } else{
+      } else if (input$indep_km %in% vlist()$factor_vars){
         yst.name <- label.regress[variable == input$indep_km, var_label][1]
         yst.lab <- label.regress[variable == input$indep_km, val_label]
+      } else{
+        yst.name <- paste(label.regress[variable == input$indep_km, var_label], "group")
+        yst.lab <- paste(label.regress[variable == input$indep_km, var_label], paste(c(">", "\u2264"), input$cut5, sep=""))
       }
       ylab = ifelse(input$cumhaz, "Cumulative hazard", "Survival")
       return(list(res = res.km, ylab = ylab, yst.name = yst.name, yst.lab = yst.lab, data = data.design))
@@ -555,22 +588,25 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       pval.coord <-  c(input$pvalx, input$pvaly)
     }
 
+    pal <- ifelse(is.null(input$pal_km), "Set1", input$pal_km)
+    text.x <- ifelse(is.null(input$xaxis_km), "Time-to-event", input$xaxis_km)
+
     if (is.null(design.survey)){
       if (is.null(id.cluster)){
         return(
-          jskm::jskm(res.km, pval = input$pval, mark=F, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                     cumhaz= input$cumhaz, cluster.option = "None", cluster.var = NULL, data = data.km, pval.coord = pval.coord, legendposition = legend.p)
+          jskm::jskm(res.km, pval = input$pval, marks= input$marks, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
+                     cumhaz= input$cumhaz, cluster.option = "None", cluster.var = NULL, data = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x)
         )
       } else{
         return(
-          jskm::jskm(res.km, pval = input$pval, mark=F, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                     cumhaz= input$cumhaz, cluster.option = "cluster", cluster.var = id.cluster(), data = data.km, pval.coord = pval.coord, legendposition = legend.p)
+          jskm::jskm(res.km, pval = input$pval, marks= input$marks, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
+                     cumhaz= input$cumhaz, cluster.option = "cluster", cluster.var = id.cluster(), data = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x)
         )
       }
     } else{
       return(
-        jskm::svyjskm(res.km, pval = input$pval, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= F, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
-                      cumhaz= input$cumhaz, design = data.km, pval.coord = pval.coord, legendposition = legend.p)
+        jskm::svyjskm(res.km, pval = input$pval, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
+                      cumhaz= input$cumhaz, design = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x)
       )
     }
   })
@@ -641,7 +677,9 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         sliderInput(session$ns("legendx"), "x-axis (proportion)",
                     min = 0, max = 1, value = 0.85),
         sliderInput(session$ns("legendy"), "y-axis",
-                    min = 0, max = 1, value = 0.8)
+                    min = 0, max = 1, value = 0.8),
+        textInput(session$ns("xaxis_km"), "x-axis text", "Time-to-event"),
+        radioButtons(session$ns("pal_km"), "Line color", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Set1", inline = T)
       )
     } else{
       tagList(
@@ -655,7 +693,9 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         sliderInput(session$ns("pvalx"), "x-axis (time)",
                     min = 0, max = input$xlims[2], value = as.integer(input$xlims[1]+ input$xlims[2]/5)),
         sliderInput(session$ns("pvaly"), "y-axis",
-                    min = 0, max = 1, value = 0.1 + input$ylims[1])
+                    min = 0, max = 1, value = 0.1 + input$ylims[1]),
+        textInput(session$ns("xaxis_km"), "x-axis text", "Time-to-event"),
+        radioButtons(session$ns("pal_km"), "Line color", choices = rownames(RColorBrewer::brewer.pal.info), selected = "Set1", inline = T)
       )
     }
 

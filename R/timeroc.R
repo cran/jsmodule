@@ -46,8 +46,8 @@ timerocUI <- function(id) {
 
   tagList(
     uiOutput(ns("eventtime")),
-    uiOutput(ns("nmodel")),
     uiOutput(ns("indep")),
+    uiOutput(ns("addmodel")),
     uiOutput(ns("time")),
     checkboxInput(ns("subcheck"), "Sub-group analysis"),
     uiOutput(ns("subvar")),
@@ -363,14 +363,22 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
     )
   })
 
-  output$nmodel <- renderUI({
-    sliderInput(session$ns("n_model"), "Number of models", value = 2, min = 1, max = 5)
+  nmodel <- reactiveVal(1)
 
+
+  output$addmodel <- renderUI({
+    if (nmodel() <= 1){
+      actionButton(session$ns("add"), label = "Add model", icon("plus"), class = "btn-primary")
+    } else if (nmodel() > 1){
+      tagList(
+        actionButton(session$ns("add"), label = "Add model", icon("plus"), class = "btn-primary"),
+        actionButton(session$ns("rmv"), label = "Remove model", icon("minus"))
+      )
+    }
   })
 
-  output$indep <- renderUI({
+  indeproc <- reactive({
     req(!is.null(input$event_km))
-    req(!is.null(input$time_km))
     mklist <- function(varlist, vars){
       lapply(varlist,
              function(x){
@@ -384,23 +392,43 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
 
 
     if (!is.null(design.survey)){
-      indep.km <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, input$time_km, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
+      indep.roc <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
     } else if (!is.null(id.cluster)){
-      indep.km <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, input$time_km, id.cluster()))
+      indep.roc <- setdiff(vlist()$factor_vars, c(vlist()$except_vars, input$event_km, id.cluster()))
     } else{
-      indep.km <- setdiff(names(data()), c(vlist()$except_vars, input$event_km, input$time_km ))
+      indep.roc <- setdiff(names(data()), c(vlist()$except_vars, input$event_km ))
     }
-
-    dynamic_selection_list <- lapply(1:input$n_model, function(i) {
-      selectInput(session$ns(paste0("indep_km", i)), paste0("Independent variables for Model ", i),
-                  choices = mklist(data_varStruct(), indep.km), multiple = T,
-                  selected = unlist(mklist(data_varStruct(), indep.km))[1]
-                  )
-    })
-
+    return(indep.roc)
   })
 
-  indeps <-  reactive(lapply(1:input$n_model, function(i){input[[paste0("indep_km", i)]]}))
+
+
+  output$indep <- renderUI({
+    selectInput(session$ns(paste0("indep_km", 1)), paste0("Independent variables for Model ", 1),
+                choices = mklist(data_varStruct(), indeproc()), multiple = T,
+                selected = unlist(mklist(data_varStruct(), indeproc()))[1])
+  })
+
+  observeEvent(input$add, {
+    insertUI(
+      selector = paste0("div:has(> #", session$ns("add"), ")"),
+      where = "beforeBegin",
+      ui = selectInput(session$ns(paste0("indep_km", nmodel() + 1)), paste0("Independent variables for Model ", nmodel() + 1),
+                       choices = mklist(data_varStruct(), indeproc()), multiple = T,
+                       selected = unlist(mklist(data_varStruct(), indeproc()))[1:min(length(indeproc()), nmodel() + 1)])
+    )
+    nmodel(nmodel() + 1)
+  })
+
+  observeEvent(input$rmv, {
+    removeUI(
+      selector = paste0("div:has(>> #", session$ns(paste0("indep_km", nmodel())), ")")
+    )
+    nmodel(nmodel() - 1)
+  })
+
+
+  indeps <-  reactive(lapply(1:nmodel(), function(i){input[[paste0("indep_km", i)]]}))
 
   output$time <- renderUI({
     req(input$time_km)
@@ -435,8 +463,8 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
       )
 
       tagList(
-        selectInput(session$ns("subvar_km"), "Sub-group variable",
-                    choices = var_subgroup_list, multiple = F,
+        selectInput(session$ns("subvar_km"), "Sub-group variables",
+                    choices = var_subgroup_list, multiple = T,
                     selected = var_subgroup[1])
       )
 
@@ -448,18 +476,24 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
 
   output$subval <- renderUI({
     req(input$subcheck == T)
-    req(input$subvar_km)
+    req(length(input$subvar_km) > 0)
 
-    if (input$subvar_km %in% vlist()$factor_vars){
-      selectInput(session$ns("subval_km"), "Sub-group value",
-                  choices = data_label()[variable == input$subvar_km, level], multiple = T,
-                  selected = data_label()[variable == input$subvar_km, level][1])
-    } else{
-      val <- stats::quantile(data()[[input$subvar_km]], na.rm = T)
-      sliderInput(session$ns("subval_km"), "Sub-group range",
-                  min = val[1], max = val[5],
-                  value = c(val[2], val[4]))
+    outUI <- tagList()
+
+    for (v in seq_along(input$subvar_km)){
+      if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+        outUI[[v]] <- selectInput(session$ns(paste0("subval_km", v)), paste0("Sub-group value: ", input$subvar_km[[v]]),
+                                  choices = data_label()[variable == input$subvar_km[[v]], level], multiple = T,
+                                  selected = data_label()[variable == input$subvar_km[[v]], level][1])
+      } else{
+        val <- stats::quantile(data()[[input$subvar_km[[v]]]], na.rm = T)
+        outUI[[v]] <- sliderInput(session$ns(paste0("subval_km", v)), paste0("Sub-group range: ", input$subvar_km[[v]]),
+                                  min = val[1], max = val[5],
+                                  value = c(val[2], val[4]))
+      }
+
     }
+    outUI
 
   })
 
@@ -472,9 +506,9 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
     req(!is.null(input$time_km))
     #req(!is.null(input$indep_km1))
     #req(!is.null(input$indep_km2))
-    for (i in 1:input$n_model){req(!is.null(input[[paste0("indep_km", i)]]))}
+    for (i in 1:nmodel()){req(!is.null(input[[paste0("indep_km", i)]]))}
     req(!is.null(indeps()))
-    collapse.indep <- sapply(1:input$n_model, function(i){paste0(input[[paste0("indep_km", i)]], collapse = "")})
+    collapse.indep <- sapply(1:nmodel(), function(i){paste0(input[[paste0("indep_km", i)]], collapse = "")})
     validate(
       need(anyDuplicated(collapse.indep) == 0, "Please select different models")
     )
@@ -484,12 +518,17 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
     label.regress <- data_label()
     data.km[[input$event_km]] <- as.numeric(as.vector(data.km[[input$event_km]]))
     if(input$subcheck == TRUE){
-      req(input$subvar_km)
-      req(input$subval_km)
-      if (input$subvar_km %in% vlist()$factor_vars){
-        data.km <- data.km[get(input$subvar_km) %in% input$subval_km]
-      } else{
-        data.km <- data.km[get(input$subvar_km) >= input$subval_km[1] & get(input$subvar_km) <= input$subval_km[2]]
+      validate(
+        need(length(input$subvar_km) > 0 , "No variables for subsetting"),
+        need(all(sapply(1:length(input$subvar_km), function(x){length(input[[paste0("subval_km", x)]])})), "No value for subsetting")
+      )
+
+      for (v in seq_along(input$subvar_km)){
+        if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+          data.km <- data.km[get(input$subvar_km[[v]]) %in% input[[paste0("subval_km", v)]]]
+        } else{
+          data.km <- data.km[get(input$subvar_km[[v]]) >= input[[paste0("subval_km", v)]][1] & get(input$subvar_km[[v]]) <= input[[paste0("subval_km", v)]][2]]
+        }
       }
       data.km[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
       label.regress2 <- mk.lev(data.km)[, c("variable", "class", "level")]
@@ -503,7 +542,7 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
       if (is.null(id.cluster)){
         res.roc <- lapply(indeps(), function(x){timeROChelper(input$event_km, input$time_km, vars.ind =  x, t = input$time_to_roc, data = data.km)})
 
-        if (input$n_model == 1){
+        if (nmodel() == 1){
           res.tb <- timeROC_table(res.roc)
 
         } else{
@@ -518,7 +557,7 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
       } else{
         res.roc <- lapply(indeps(), function(x){timeROChelper(input$event_km, input$time_km, vars.ind =  x, t = input$time_to_roc, data = data.km, id.cluster = id.cluster())})
 
-        if (input$n_model == 1){
+        if (nmodel() == 1){
           res.tb <- timeROC_table(res.roc)
 
         } else{
@@ -543,13 +582,17 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
       label.regress <- data_label()
       data.design$variables[[input$event_km]] <- as.numeric(as.vector(data.design$variables[[input$event_km]]))
       if(input$subcheck == TRUE){
-        req(input$subvar_km)
-        req(input$subval_km)
+        validate(
+          need(length(input$subvar_km) > 0 , "No variables for subsetting"),
+          need(all(sapply(1:length(input$subvar_km), function(x){length(input[[paste0("subval_km", x)]])})), "No value for subsetting")
+        )
 
-        if (input$subvar_km %in% vlist()$factor_vars){
-          data.design <- subset(data.design, get(input$subvar_km) %in% input$subval_km)
-        } else{
-          data.design <- subset(data.design, get(input$subvar_km) >= input$subval_km[1] & get(input$subvar_km) <= input$subval_km[2])
+        for (v in seq_along(input$subvar_km)){
+          if (input$subvar_km[[v]] %in% vlist()$factor_vars){
+            data.design <- subset(data.design, get(input$subvar_km[[v]]) %in% input[[paste0("subval_km", v)]])
+          } else{
+            data.design <- subset(data.design, get(input$subvar_km[[v]]) >= input[[paste0("subval_km", v)]][1] & get(input$subvar_km[[v]]) <= input[[paste0("subval_km", v)]][2])
+          }
         }
         data.design$variables[, (vlist()$factor_vars) := lapply(.SD, factor), .SDcols = vlist()$factor_vars]
         label.regress2 <- mk.lev(data.design$variables)[, c("variable", "class", "level")]
@@ -562,7 +605,7 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
       res.roc <- lapply(indeps(), function(x){timeROChelper(input$event_km, input$time_km, vars.ind =  x,
                                                             t = input$time_to_roc, data = data.km, design.survey = data.design)})
 
-      if (input$n_model == 1){
+      if (nmodel() == 1){
         res.tb <- timeROC_table(res.roc)
 
       } else{

@@ -1,3 +1,27 @@
+# jsmodule 1.0.0
+
+## Update
+
+* Change UI: ROC/time-dependent ROC analysis.
+
+* Choose cut-off value in **kaplan-meier analysis with continuous independent variable**.
+
+* Add some icons.
+
+* Choose **multiple conditions when subsetting data**.
+
+* Add **caliper** option when propensity score matching. 
+
+* **Make binary variables** from contiuous variables.
+
+* Non-normal variables can be summarized with [min,max]. 
+
+* Add **line color**, **x-axis label** option to **kaplan-meier** plot
+
+## Bug fixes
+
+* Encoding error when `csv` file upload.
+
 # jsmodule 0.9.9
 
 ## New addins
@@ -20,7 +44,7 @@
 
 ## Update: Propensity score analysis
 
-* Add scatterplot, ROC/time-dependent ROD analysis.
+* Add scatterplot, ROC/time-dependent ROC analysis.
 
 ## Bug fixes: repeated measure analysis 
 

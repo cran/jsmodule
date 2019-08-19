@@ -35,7 +35,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
   requireNamespace("survC1")
 
   ## To remove NOTE.
-  level <- val_label <- variable <- NULL
+  level <- val_label <- BinaryGroupRandom <- variable <- NULL
 
   ## Data label
   out.old <- data.table::data.table(data)
@@ -69,16 +69,20 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
 
 
   ui <- navbarPage("Propensity score analysis",
-                   tabPanel("Data",
+                   tabPanel("Data", icon = icon("table"),
                             sidebarLayout(
                               sidebarPanel(
                                 uiOutput("factor"),
+                                uiOutput("binary_check"),
+                                uiOutput("binary_var"),
+                                uiOutput("binary_val"),
                                 uiOutput("subset_check"),
                                 uiOutput("subset_var"),
                                 uiOutput("subset_val"),
                                 uiOutput("group_ps"),
                                 uiOutput("indep_ps"),
-                                uiOutput("pcut")
+                                uiOutput("pcut"),
+                                uiOutput("caliperps")
 
                               ),
                               mainPanel(
@@ -91,7 +95,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                               )
                             )
                    ),
-                   tabPanel("Table 1",
+                   tabPanel("Table 1", icon = icon("percentage"),
                             sidebarLayout(
                               sidebarPanel(
                                 tb1moduleUI("tb1")
@@ -102,7 +106,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                                                      withLoader(DTOutput("table1_original"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             ),
@@ -110,7 +114,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                                                      withLoader(DTOutput("table1_ps"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             ),
@@ -118,7 +122,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                                                      withLoader(DTOutput("table1_iptw"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and complex survey regression"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and complex sampling rank test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and complex sampling rank test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             )
@@ -126,7 +130,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                               )
                             )
                    ),
-                   navbarMenu("Regression",
+                   navbarMenu("Regression", icon = icon("list-alt"),
                               tabPanel("Linear regression",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -194,7 +198,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                               )
 
                    ),
-                   navbarMenu("Plot",
+                   navbarMenu("Plot", icon = icon("bar-chart-o"),
                               tabPanel("Scatter plot",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -238,7 +242,7 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                                        )
                               )
                    ),
-                   navbarMenu("ROC analysis",
+                   navbarMenu("ROC analysis", icon = icon("check"),
                               tabPanel("ROC",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -307,8 +311,43 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
     })
 
     observeEvent(c(factor_original, input$factor_vname), {
+      output$binary_check <- renderUI({
+        checkboxInput(session$ns("check_binary"), "Make binary variables")
+      })
+
       output$subset_check <- renderUI({
         checkboxInput("check_subset", "Subset data")
+      })
+    })
+
+
+    observeEvent(input$check_binary, {
+      var.conti <- setdiff(names(out), c(factor_original, input$factor_vname))
+      output$binary_var <- renderUI({
+        req(input$check_binary == T)
+        selectInput(session$ns("var_binary"), "Variables to dichotomize",
+                    choices = var.conti, multiple = T,
+                    selected = var.conti[1])
+      })
+
+      output$binary_val <- renderUI({
+        req(input$check_binary == T)
+        req(length(input$var_binary) > 0)
+        outUI <- tagList()
+        for (v in seq_along(input$var_binary)){
+          med <- stats::quantile(out[[input$var_binary[[v]]]], c(0.05, 0.5, 0.95), na.rm = T)
+          outUI[[v]] <- splitLayout(cellWidths = c("25%", "75%"),
+                                    selectInput(session$ns(paste0("con_binary", v)), paste0("Define reference:"),
+                                                choices = c("\u2264", "\u2265", "\u003c", "\u003e"), selected = "\u2264"
+                                    ),
+                                    numericInput(session$ns(paste0("cut_binary", v)), input$var_binary[[v]],
+                                                 value = med[2], min = med[1], max = med[3]
+                                    )
+          )
+
+        }
+        outUI
+
       })
     })
 
@@ -322,8 +361,8 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
         #)
 
         tagList(
-          selectInput("var_subset", "Subset variable",
-                      choices = names(out), multiple = F,
+          selectInput("var_subset", "Subset variables",
+                      choices = names(out), multiple = T,
                       selected = names(out)[1])
         )
       })
@@ -333,100 +372,147 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
         req(input$var_subset)
         var.factor <- c(factor_original, input$factor_vname)
 
-        if (input$var_subset %in% var.factor){
-          varlevel <- levels(as.factor(out[[input$var_subset]]))
-          selectInput("val_subset", "Subset value",
-                      choices = varlevel, multiple = T,
-                      selected = varlevel[1])
-        } else{
-          val <- stats::quantile(out[[input$var_subset]], na.rm = T)
-          sliderInput("val_subset", "Subset range",
-                      min = val[1], max = val[5],
-                      value = c(val[2], val[4]))
+        outUI <- tagList()
+
+        for (v in seq_along(input$var_subset)){
+          if (input$var_subset[[v]] %in% var.factor){
+            varlevel <- levels(as.factor(out[[input$var_subset[[v]]]]))
+            outUI[[v]] <- selectInput(session$ns(paste0("val_subset", v)), paste0("Subset value: ", input$var_subset[[v]]),
+                                      choices = varlevel, multiple = T,
+                                      selected = varlevel[1])
+          } else{
+            val <- stats::quantile(out[[input$var_subset[[v]]]], na.rm = T)
+            outUI[[v]] <- sliderInput(session$ns(paste0("val_subset", v)), paste0("Subset range: ", input$var_subset[[v]]),
+                                      min = val[1], max = val[5],
+                                      value = c(val[2], val[4]))
+          }
+
         }
+        outUI
       })
     })
 
 
 
     data.info <- reactive({
-      out1 <- out
+      out1 <- data.table::data.table(out)
       out1[, (conti_original) := lapply(.SD, function(x){as.numeric(as.vector(x))}), .SDcols = conti_original]
       if (!is.null(input$factor_vname) & length(input$factor_vname) > 0){
         out1[, (input$factor_vname) := lapply(.SD, as.factor), .SDcols= input$factor_vname]
       }
 
       out.label <- mk.lev(out1)
-      for (vn in ref[["name.new"]]){
-        w <- which(ref[["name.new"]] == vn)
-        out.label[variable == vn, var_label := ref[["name.old"]][w]]
+
+      if (!is.null(input$check_binary)){
+        if (input$check_binary){
+          validate(
+            need(length(input$var_binary) > 0 , "No variables to dichotomize")
+          )
+          sym.ineq <- c("\u2264", "\u2265", "\u003c", "\u003e")
+          names(sym.ineq) <- sym.ineq[4:1]
+          sym.ineq2 <- c("le", "ge", "l", "g")
+          names(sym.ineq2) <- sym.ineq
+          for (v in seq_along(input$var_binary)){
+            req(input[[paste0("con_binary", v)]])
+            req(input[[paste0("cut_binary", v)]])
+            if (input[[paste0("con_binary", v)]] == "\u2264"){
+              out1[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) <= input[[paste0("cut_binary", v)]]))]
+
+            } else if (input[[paste0("con_binary", v)]] == "\u2265"){
+              out1[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) >= input[[paste0("cut_binary", v)]]))]
+            } else if (input[[paste0("con_binary", v)]] == "\u003c"){
+              out1[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) < input[[paste0("cut_binary", v)]]))]
+            } else{
+              out1[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) > input[[paste0("cut_binary", v)]]))]
+            }
+
+            cn.new <- paste0(input$var_binary[[v]], "_group_", sym.ineq2[input[[paste0("con_binary", v)]]], input[[paste0("cut_binary", v)]])
+            data.table::setnames(out1, "BinaryGroupRandom", cn.new)
+
+            label.binary <- mk.lev(out1[, .SD, .SDcols = cn.new])
+            label.binary[, var_label := paste0(input$var_binary[[v]], " _group")]
+            #label.binary[, val_label := paste0(c(input[[paste0("con_binary", v)]], sym.ineq[input[[paste0("con_binary", v)]]]), " ", input[[paste0("cut_binary", v)]])]
+            out.label <- rbind(out.label, label.binary)
+          }
+
+        }
       }
 
 
       if (!is.null(input$check_subset)){
         if (input$check_subset){
           validate(
-            need(length(input$var_subset) > 0 , "No variable for subsetting")
+            need(length(input$var_subset) > 0 , "No variable for subsetting"),
+            need(all(sapply(1:length(input$var_subset), function(x){length(input[[paste0("val_subset", x)]])})), "No value for subsetting")
+
           )
           var.factor <- c(factor_original, input$factor_vname)
 
-          if (input$var_subset %in% var.factor){
-            out1 <- out1[get(input$var_subset) %in% input$val_subset]
-            #var.factor <- c(data()$factor_original, input$factor_vname)
-            out1[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
-            out.label2 <- mk.lev(out1)[, c("variable", "class", "level")]
-            data.table::setkey(out.label, "variable", "class", "level")
-            data.table::setkey(out.label2, "variable", "class", "level")
-            out.label <- out.label[out.label2]
+          for (v in seq_along(input$var_subset)){
+            if (input$var_subset[[v]] %in% var.factor){
+              out1 <- out1[get(input$var_subset[[v]]) %in% input[[paste0("val_subset", v)]]]
+              #var.factor <- c(data()$factor_original, input$factor_vname)
+              out1[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+              out.label2 <- mk.lev(out1)[, c("variable", "class", "level")]
+              data.table::setkey(out.label, "variable", "class", "level")
+              data.table::setkey(out.label2, "variable", "class", "level")
+              out.label <- out.label[out.label2]
 
-          } else{
-            out1 <- out1[get(input$var_subset) >= input$val_subset[1] & get(input$var_subset) <= input$val_subset[2]]
-            #var.factor <- c(data()$factor_original, input$factor_vname)
-            out1[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
-            out.label2 <- mk.lev(out1)[, c("variable", "class", "level")]
-            data.table::setkey(out.label, "variable", "class", "level")
-            data.table::setkey(out.label2, "variable", "class", "level")
-            out.label <- out.label[out.label2]
+            } else{
+              out1 <- out1[get(input$var_subset[[v]]) >= input[[paste0("val_subset", v)]][1] & get(input$var_subset[[v]]) <= input[[paste0("val_subset", v)]][2]]
+              #var.factor <- c(data()$factor_original, input$factor_vname)
+              out1[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+              out.label2 <- mk.lev(out1)[, c("variable", "class", "level")]
+              data.table::setkey(out.label, "variable", "class", "level")
+              data.table::setkey(out.label2, "variable", "class", "level")
+              out.label <- out.label[out.label2]
+            }
           }
 
         }
       }
 
+      for (vn in ref[["name.new"]]){
+        w <- which(ref[["name.new"]] == vn)
+        out.label[variable == vn, var_label := ref[["name.old"]][w]]
+      }
+      out.label <- rbind(out.label, data.table(variable = "pscore", class = "numeric", level = NA, var_label = "pscore", val_label = NA))
+
       return(list(data = out1, label = out.label))
     })
 
+    observeEvent(data.info(),{
+      output$group_ps <- renderUI({
+        factor_vars <- names(data.info()$data)[data.info()$data[, lapply(.SD, class) %in% c("factor", "character")]]
+        validate(
+          need(!is.null(factor_vars) & length(factor_vars) > 0, "No categorical variables in data")
+        )
+
+        class01_factor <- unlist(data.info()$data[, lapply(.SD, function(x){identical(levels(x), c("0", "1"))}), .SDcols = factor_vars])
+        #nclass_factor <- unlist(data()[, lapply(.SD, function(x){length(unique(x))}), .SDcols = factor_vars])
+        #factor_2vars <- names(nclass_factor)[nclass_factor == 2]
 
 
-    output$group_ps <- renderUI({
-      factor_vars <- names(data.info()$data)[data.info()$data[, lapply(.SD, class) %in% c("factor", "character")]]
-      validate(
-        need(!is.null(factor_vars) & length(factor_vars) > 0, "No categorical variables in data")
-      )
+        validate(
+          need(!is.null(class01_factor), "No categorical variables coded as 0, 1 in data")
+        )
 
-      class01_factor <- unlist(data.info()$data[, lapply(.SD, function(x){identical(levels(x), c("0", "1"))}), .SDcols = factor_vars])
-      #nclass_factor <- unlist(data()[, lapply(.SD, function(x){length(unique(x))}), .SDcols = factor_vars])
-      #factor_2vars <- names(nclass_factor)[nclass_factor == 2]
+        factor_01vars <- factor_vars[class01_factor]
+        factor_01vars_case_small <- factor_01vars[unlist(sapply(factor_01vars, function(x){diff(table(data.info()$data[[x]])) <= 0}))]
 
-
-      validate(
-        need(!is.null(class01_factor), "No categorical variables coded as 0, 1 in data")
-      )
-
-      factor_01vars <- factor_vars[class01_factor]
-      factor_01vars_case_small <- factor_01vars[unlist(sapply(factor_01vars, function(x){diff(table(data.info()$data[[x]])) <= 0}))]
-
-      validate(
-        need(length(factor_01vars_case_small) > 0, "No candidate group variable for PS calculation")
-      )
+        validate(
+          need(length(factor_01vars_case_small) > 0, "No candidate group variable for PS calculation")
+        )
 
 
-      selectInput("group_pscal", label = "Group variable for PS calculation (0, 1 coding)",
-                  choices = mklist(data_varStruct1, factor_01vars_case_small), multiple = F,
-                  selected = factor_01vars_case_small[1])
-    })
+        selectInput("group_pscal", label = "Group variable for PS calculation (0, 1 coding)",
+                    choices = mklist(list(variable = names(data.info()$data)), factor_01vars_case_small), multiple = F,
+                    selected = factor_01vars_case_small[1])
 
-    observeEvent(input$group_pscal , {
+      })
+
       output$indep_ps <- renderUI({
+        req(!is.null(input$group_pscal))
         if (is.null(input$group_pscal)){
           return(NULL)
         }
@@ -444,26 +530,41 @@ jsPropensityGadget <- function(data, nfactor.limit = 20){
                           })
         tagList(
           selectInput("indep_pscal", label = "Independent variables for PS calculation",
-                      choices = mklist(data_varStruct1, vars), multiple = T,
+                      choices = mklist(list(variable = names(data.info()$data)), vars), multiple = T,
                       selected = vars[varsIni])
         )
       })
+
+      output$caliperps <- renderUI({
+        sliderInput("caliper", "Caliper (0: no)", value = 0, min = 0, max = 1)
+      })
     })
 
-    mat.info <- eventReactive(input$indep_pscal, {
+
+
+
+
+
+
+    mat.info <- eventReactive(c(input$indep_pscal, input$group_pscal, input$caliper), {
+      req(input$indep_pscal)
       if (is.null(input$group_pscal) | is.null(input$indep_pscal)){
         return(NULL)
       }
+      data <- data.table::data.table(data.info()$data)
 
       forms <- as.formula(paste(input$group_pscal, " ~ ", paste(input$indep_pscal, collapse = "+"), sep=""))
-      m.out <- MatchIt::matchit(forms, data = data.info()$data)
+      m.out <- MatchIt::matchit(forms, data = data, caliper = input$caliper)
       pscore <- m.out$distance
       iptw <- ifelse(m.out$treat == levels(m.out$treat)[2], 1/pscore,  1/(1-pscore))
-      wdata <- cbind(data.info()$data, pscore, iptw)
+      wdata <- cbind(data, pscore, iptw)
 
       mdata <- MatchIt::match.data(m.out, distance = "pscore")
       return(list(data = wdata, matdata = mdata[, -grep("weights", names(mdata))]))
     })
+
+
+
 
 
 
@@ -858,7 +959,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
   options(shiny.maxRequestSize = max.filesize * 1024^2)
 
   ui <- navbarPage("Propensity score analysis",
-                   tabPanel("Data",
+                   tabPanel("Data", icon = icon("table"),
                             sidebarLayout(
                               sidebarPanel(
                                 uiOutput("import"),
@@ -874,7 +975,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
                             )
                    ),
-                   tabPanel("Table 1",
+                   tabPanel("Table 1", icon = icon("percentage"),
                             sidebarLayout(
                               sidebarPanel(
                                 tb1moduleUI("tb1")
@@ -885,7 +986,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                                                      withLoader(DTOutput("table1_original"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             ),
@@ -893,7 +994,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                                                      withLoader(DTOutput("table1_ps"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             ),
@@ -901,7 +1002,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                                                      withLoader(DTOutput("table1_iptw"), type="html", loader="loader6"),
                                                      wellPanel(
                                                        h5("Normal continuous variables  are summarized with Mean (SD) and complex survey regression"),
-                                                       h5("Non-normal continuous variables are summarized with median [IQR] and complex sampling rank test"),
+                                                       h5("Non-normal continuous variables are summarized with median [IQR or min,max] and complex sampling rank test"),
                                                        h5("Categorical variables  are summarized with table")
                                                      )
                                             )
@@ -909,7 +1010,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
                             )
                    ),
-                   navbarMenu("Regression",
+                   navbarMenu("Regression", icon = icon("list-alt"),
                               tabPanel("Linear regression",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -977,7 +1078,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
 
                    ),
-                   navbarMenu("Plot",
+                   navbarMenu("Plot", icon = icon("bar-chart-o"),
                               tabPanel("Scatter plot",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -1021,7 +1122,7 @@ jsPropensityExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                                        )
                               )
                    ),
-                   navbarMenu("ROC analysis",
+                   navbarMenu("ROC analysis", icon = icon("check"),
                               tabPanel("ROC",
                                        sidebarLayout(
                                          sidebarPanel(

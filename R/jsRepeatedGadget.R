@@ -23,6 +23,10 @@
 jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
   requireNamespace("survival")
   requireNamespace("survC1")
+
+  ## To remove NOTE.
+  val_label <- BinaryGroupRandom <- variable <- NULL
+
   change.vnlist = list(c(" ", "_"), c("=<", "_le_"), c("=>", "_ge_"), c("=", "_eq_"), c("\\(", "_open_"), c("\\)", "_close_"), c("%", "_percent_"), c("-", "_"), c("/", "_"),
                        c("\r\n", "_"), c(",", "_comma_"))
 
@@ -30,7 +34,8 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
   name.old <- names(out)
   out <- data.table(data, check.names = T)
   name.new <- names(out)
-  ref <- data.table(name.old = name.old, name.new = name.new);setkey(ref, name.new)
+  #ref <- data.table(name.old = name.old, name.new = name.new);setkey(ref, name.new)
+  ref <- list(name.old = name.old, name.new = name.new)
 
   ## factor variable
   factor_vars <- names(out)[out[, lapply(.SD, class) %in% c("factor", "character")]]
@@ -45,11 +50,14 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
 
 
   ui <- navbarPage("Repeated measure analysis",
-                   tabPanel("Data",
+                   tabPanel("Data", icon = icon("table"),
                             sidebarLayout(
                               sidebarPanel(
                                 uiOutput("factor"),
                                 uiOutput("repeated"),
+                                uiOutput("binary_check"),
+                                uiOutput("binary_var"),
+                                uiOutput("binary_val"),
                                 uiOutput("subset_check"),
                                 uiOutput("subset_var"),
                                 uiOutput("subset_val")
@@ -62,7 +70,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
                               )
                             )
                    ),
-                   tabPanel("Table 1",
+                   tabPanel("Table 1", icon = icon("percentage"),
                             sidebarLayout(
                               sidebarPanel(
                                 tb1moduleUI("tb1")
@@ -71,14 +79,14 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
                                 withLoader(DTOutput("table1"), type="html", loader="loader6"),
                                 wellPanel(
                                   h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                  h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                  h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                   h5("Categorical variables  are summarized with table")
                                 )
                               )
                             )
 
                    ),
-                   navbarMenu("GEE",
+                   navbarMenu("GEE", icon = icon("list-alt"),
                               tabPanel("Linear",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -111,7 +119,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
                               )
 
                    ),
-                   navbarMenu("Plot",
+                   navbarMenu("Plot", icon = icon("bar-chart-o"),
                               tabPanel("Scatter plot",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -137,7 +145,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
                               )
 
                    ),
-                   navbarMenu("ROC analysis",
+                   navbarMenu("ROC analysis", icon = icon("check"),
                               tabPanel("ROC",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -180,8 +188,43 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
     })
 
     observeEvent(c(data.list$factor_original, input$factor_vname, input$repeated_vname), {
+      output$binary_check <- renderUI({
+        checkboxInput(session$ns("check_binary"), "Make binary variables")
+      })
+
       output$subset_check <- renderUI({
         checkboxInput("check_subset", "Subset data")
+      })
+    })
+
+
+    observeEvent(input$check_binary, {
+      var.conti <- setdiff(names(data.list$data), c(data.list$factor_original, input$factor_vname))
+      output$binary_var <- renderUI({
+        req(input$check_binary == T)
+        selectInput(session$ns("var_binary"), "Variables to dichotomize",
+                    choices = var.conti, multiple = T,
+                    selected = var.conti[1])
+      })
+
+      output$binary_val <- renderUI({
+        req(input$check_binary == T)
+        req(length(input$var_binary) > 0)
+        outUI <- tagList()
+        for (v in seq_along(input$var_binary)){
+          med <- stats::quantile(data.list$data[[input$var_binary[[v]]]], c(0.05, 0.5, 0.95), na.rm = T)
+          outUI[[v]] <- splitLayout(cellWidths = c("25%", "75%"),
+                                    selectInput(session$ns(paste0("con_binary", v)), paste0("Define reference:"),
+                                                choices = c("\u2264", "\u2265", "\u003c", "\u003e"), selected = "\u2264"
+                                    ),
+                                    numericInput(session$ns(paste0("cut_binary", v)), input$var_binary[[v]],
+                                                 value = med[2], min = med[1], max = med[3]
+                                    )
+          )
+
+        }
+        outUI
+
       })
     })
 
@@ -195,8 +238,8 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
         #)
 
         tagList(
-          selectInput("var_subset", "Subset variable",
-                      choices = names(data.list$data), multiple = F,
+          selectInput("var_subset", "Subset variables",
+                      choices = names(data.list$data), multiple = T,
                       selected = names(data.list$data)[1])
         )
       })
@@ -206,58 +249,104 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
         req(input$var_subset)
         var.factor <- c(data.list$factor_original, input$factor_vname)
 
-        if (input$var_subset %in% var.factor){
-          varlevel <- levels(as.factor(data.list$data[[input$var_subset]]))
-          selectInput(session$ns("val_subset"), "Subset value",
-                      choices = varlevel, multiple = T,
-                      selected = varlevel[1])
-        } else{
-          val <- stats::quantile(data.list$data[[input$var_subset]], na.rm = T)
-          sliderInput(session$ns("val_subset"), "Subset range",
-                      min = val[1], max = val[5],
-                      value = c(val[2], val[4]))
+        outUI <- tagList()
+
+        for (v in seq_along(input$var_subset)){
+          if (input$var_subset[[v]] %in% var.factor){
+            varlevel <- levels(as.factor(data.list$data[[input$var_subset[[v]]]]))
+            outUI[[v]] <- selectInput(session$ns(paste0("val_subset", v)), paste0("Subset value: ", input$var_subset[[v]]),
+                                      choices = varlevel, multiple = T,
+                                      selected = varlevel[1])
+          } else{
+            val <- stats::quantile(data.list$data[[input$var_subset[[v]]]], na.rm = T)
+            outUI[[v]] <- sliderInput(session$ns(paste0("val_subset", v)), paste0("Subset range: ", input$var_subset[[v]]),
+                                      min = val[1], max = val[5],
+                                      value = c(val[2], val[4]))
+          }
+
         }
+        outUI
       })
     })
 
 
     data.info <- reactive({
-      out <- data.list$data
+      out <- data.table::data.table(data.list$data)
       out[, (data.list$conti_original) := lapply(.SD, function(x){as.numeric(as.vector(x))}), .SDcols = data.list$conti_original]
       if (!is.null(input$factor_vname)){
         out[, (input$factor_vname) := lapply(.SD, as.factor), .SDcols= input$factor_vname]
       }
       out.label <- mk.lev(out)
 
+      req(!is.null(input$check_binary))
+      if (input$check_binary == T){
+        validate(
+          need(length(input$var_binary) > 0 , "No variables to dichotomize")
+        )
+        sym.ineq <- c("\u2264", "\u2265", "\u003c", "\u003e")
+        names(sym.ineq) <- sym.ineq[4:1]
+        sym.ineq2 <- c("le", "ge", "l", "g")
+        names(sym.ineq2) <- sym.ineq
+        for (v in seq_along(input$var_binary)){
+          req(input[[paste0("con_binary", v)]])
+          req(input[[paste0("cut_binary", v)]])
+          if (input[[paste0("con_binary", v)]] == "\u2264"){
+            out[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) <= input[[paste0("cut_binary", v)]]))]
+          } else if (input[[paste0("con_binary", v)]] == "\u2265"){
+            out[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) >= input[[paste0("cut_binary", v)]]))]
+          } else if (input[[paste0("con_binary", v)]] == "\u003c"){
+            out[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) < input[[paste0("cut_binary", v)]]))]
+          } else{
+            out[, BinaryGroupRandom := factor(1 - as.integer(get(input$var_binary[[v]]) > input[[paste0("cut_binary", v)]]))]
+          }
+
+          cn.new <- paste0(input$var_binary[[v]], "_group_", sym.ineq2[input[[paste0("con_binary", v)]]], input[[paste0("cut_binary", v)]])
+          data.table::setnames(out, "BinaryGroupRandom", cn.new)
+
+          label.binary <- mk.lev(out[, .SD, .SDcols = cn.new])
+          label.binary[, var_label := paste0(input$var_binary[[v]], " _group")]
+          label.binary[, val_label := paste0(c(input[[paste0("con_binary", v)]], sym.ineq[input[[paste0("con_binary", v)]]]), " ", input[[paste0("cut_binary", v)]])]
+          out.label <- rbind(out.label, label.binary)
+        }
+
+      }
+
       if (!is.null(input$check_subset)){
         if (input$check_subset){
           validate(
-            need(length(input$var_subset) > 0 , "No variables for subsetting")
+            need(length(input$var_subset) > 0 , "No variables for subsetting"),
+            need(all(sapply(1:length(input$var_subset), function(x){length(input[[paste0("val_subset", x)]])})), "No value for subsetting")
           )
           var.factor <- c(data.list$factor_original, input$factor_vname)
           #var.conti <- setdiff(data()$conti_original, input$factor_vname)
 
-          if (input$var_subset %in% var.factor){
-            out <- out[get(input$var_subset) %in% input$val_subset]
-            #var.factor <- c(data()$factor_original, input$factor_vname)
-            out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
-            out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
-            data.table::setkey(out.label, "variable", "class", "level")
-            data.table::setkey(out.label2, "variable", "class", "level")
-            out.label <- out.label[out.label2]
-          } else{
-            out <- out[get(input$var_subset) >= input$val_subset[1] & get(input$var_subset) <= input$val_subset[2]]
-            #var.factor <- c(data()$factor_original, input$factor_vname)
-            out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
-            out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
-            data.table::setkey(out.label, "variable", "class", "level")
-            data.table::setkey(out.label2, "variable", "class", "level")
-            out.label <- out.label[out.label2]
+          for (v in seq_along(input$var_subset)){
+            if (input$var_subset[[v]] %in% var.factor){
+              out <- out[get(input$var_subset[[v]]) %in% input[[paste0("val_subset", v)]]]
+              #var.factor <- c(data()$factor_original, input$factor_vname)
+              out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+              out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
+              data.table::setkey(out.label, "variable", "class", "level")
+              data.table::setkey(out.label2, "variable", "class", "level")
+              out.label <- out.label[out.label2]
+            } else{
+              out <- out[get(input$var_subset[[v]]) >= input[[paste0("val_subset", v)]][1] & get(input$var_subset[[v]]) <= input[[paste0("val_subset", v)]][2]]
+              #var.factor <- c(data()$factor_original, input$factor_vname)
+              out[, (var.factor) := lapply(.SD, factor), .SDcols = var.factor]
+              out.label2 <- mk.lev(out)[, c("variable", "class", "level")]
+              data.table::setkey(out.label, "variable", "class", "level")
+              data.table::setkey(out.label2, "variable", "class", "level")
+              out.label <- out.label[out.label2]
+            }
           }
         }
       }
 
-      out.label[, var_label := ref[out.label$variable, name.old]]
+      for (vn in ref[["name.new"]]){
+        w <- which(ref[["name.new"]] == vn)
+        out.label[variable == vn, var_label := ref[["name.old"]][w]]
+      }
+
 
       return(list(data = out, label = out.label))
     })
@@ -282,7 +371,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
 
 
 
-    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, showAllLevels = T, nfactor.limit = nfactor.limit)
+    out_tb1 <- callModule(tb1module2, "tb1", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, showAllLevels = T)
 
     output$table1 <- renderDT({
       tb = out_tb1()$table
@@ -300,7 +389,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
       return(out.tb1)
     })
 
-    out_linear <- callModule(GEEModuleLinear, "linear", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, id.gee = id.gee, nfactor.limit = nfactor.limit)
+    out_linear <- callModule(GEEModuleLinear, "linear", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, id.gee = id.gee)
 
     output$lineartable <- renderDT({
       hide = which(colnames(out_linear()$table) == "sig")
@@ -313,7 +402,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
       ) %>% formatStyle("sig", target = 'row',backgroundColor = styleEqual("**", 'yellow'))
     })
 
-    out_logistic <- callModule(GEEModuleLogistic, "logistic", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, id.gee = id.gee, nfactor.limit = nfactor.limit)
+    out_logistic <- callModule(GEEModuleLogistic, "logistic", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, id.gee = id.gee)
 
     output$logistictable <- renderDT({
       hide = which(colnames(out_logistic()$table) == "sig")
@@ -326,7 +415,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
       ) %>% formatStyle("sig", target = 'row',backgroundColor = styleEqual("**", 'yellow'))
     })
 
-    out_cox <- callModule(coxModule, "cox", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, default.unires = T, id.cluster = id.gee, nfactor.limit = nfactor.limit)
+    out_cox <- callModule(coxModule, "cox", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit, default.unires = T, id.cluster = id.gee)
 
     output$coxtable <- renderDT({
       hide = which(colnames(out_cox()$table) == c("sig"))
@@ -345,7 +434,7 @@ jsRepeatedGadjet <- function(data, nfactor.limit = 20) {
       print(out_ggpairs())
     })
 
-    out_kaplan <- callModule(kaplanModule, "kaplan", data = data, data_label = data.label, nfactor.limit = nfactor.limit, data_varStruct = NULL, id.cluster = id.gee, nfactor.limit = nfactor.limit)
+    out_kaplan <- callModule(kaplanModule, "kaplan", data = data, data_label = data.label, nfactor.limit = nfactor.limit, data_varStruct = NULL, id.cluster = id.gee)
 
     output$kaplan_plot <- renderPlot({
       print(out_kaplan())
@@ -441,7 +530,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
   options(shiny.maxRequestSize = max.filesize * 1024^2)
 
   ui <- navbarPage("Repeated measure analysis",
-                   tabPanel("Data",
+                   tabPanel("Data", icon = icon("table"),
                             sidebarLayout(
                               sidebarPanel(
                                 uiOutput("import"),
@@ -457,7 +546,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
                             )
                    ),
-                   tabPanel("Table 1",
+                   tabPanel("Table 1", icon = icon("percentage"),
                             sidebarLayout(
                               sidebarPanel(
                                 tb1moduleUI("tb1")
@@ -466,14 +555,14 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                                 withLoader(DTOutput("table1"), type="html", loader="loader6"),
                                 wellPanel(
                                   h5("Normal continuous variables  are summarized with Mean (SD) and t-test(2 groups) or ANOVA(> 2 groups)"),
-                                  h5("Non-normal continuous variables are summarized with median [IQR] and kruskal-wallis test"),
+                                  h5("Non-normal continuous variables are summarized with median [IQR or min,max] and kruskal-wallis test"),
                                   h5("Categorical variables  are summarized with table")
                                 )
                               )
                             )
 
                    ),
-                   navbarMenu("GEE",
+                   navbarMenu("GEE", icon = icon("list-alt"),
                               tabPanel("Linear",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -506,7 +595,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
 
                    ),
-                   navbarMenu("Plot",
+                   navbarMenu("Plot", icon = icon("bar-chart-o"),
                               tabPanel("Scatter plot",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -532,7 +621,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
                               )
 
                    ),
-                   navbarMenu("ROC analysis",
+                   navbarMenu("ROC analysis", icon = icon("check"),
                               tabPanel("ROC",
                                        sidebarLayout(
                                          sidebarPanel(
@@ -660,7 +749,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048){
       )  %>% formatStyle("sig", target = 'row',backgroundColor = styleEqual("**", 'yellow'))
     })
 
-    out_ggpairs <- callModule(ggpairsModule2, "ggpairs", data = data, data_label = data.label, data_varStruct = NULL)
+    out_ggpairs <- callModule(ggpairsModule2, "ggpairs", data = data, data_label = data.label, data_varStruct = NULL, nfactor.limit = nfactor.limit)
 
     output$ggpairs_plot <- renderPlot({
       print(out_ggpairs())
