@@ -1,3 +1,16 @@
+# jsmodule 1.0.1
+
+## Update
+
+* **Change reference** of categorical variables
+
+* Add **line type** option to **kaplan-meier** plot 
+
+## Bug fixes
+
+* **Reactive error** in propensity score matching.
+
+
 # jsmodule 1.0.0
 
 ## Update
