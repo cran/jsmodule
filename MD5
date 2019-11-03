@@ -1,6 +1,6 @@
-a6750ad477fdf434fd38eb579a75da5e *DESCRIPTION
+78d1f3f6885916db1989016800aa8f79 *DESCRIPTION
 1b11708e965ece11cae891638ba67cc7 *NAMESPACE
-5fac048bdd40fb39ba439b5e19cc134b *NEWS.md
+a114f7d3fa7f7a04085f9e428e59a4d1 *NEWS.md
 023f0f18cef17fe0c6aed67a59238b20 *R/FilePsInput.R
 a4080656015a69747447f46174f9338c *R/FileRepeatedInput.R
 c5c9f0bf44341eea8e8dec5b56f373e9 *R/FileSurveyInput.R
@@ -9,10 +9,10 @@ c5c9f0bf44341eea8e8dec5b56f373e9 *R/FileSurveyInput.R
 91afddc1b33bf486b4f368af4d021e9c *R/display2.R
 52ad25ae7171997559662169a9baa3e7 *R/gee.R
 33af657397ad5d888de3079c6d390067 *R/ggpairs.R
-9e89658f2c571ea7d3a49d771458d6e5 *R/jsBasicGadget.R
-07af67f26aa9543a947988443bbacddd *R/jsPropensityGadget.R
-d990b7ce8cfd838487e6522695133554 *R/jsRepeatedGadget.R
-a0748eb470c40464b0d613f78627db68 *R/jsSurveyGadget.R
+624d7a0bf99668590b809dafd44fd26a *R/jsBasicGadget.R
+d88e9a0deb549c95a8df2a72fc1601ab *R/jsPropensityGadget.R
+d66790e6bdf088f407a33aac41588bfa *R/jsRepeatedGadget.R
+81037774e137540a6465389b6f72bd73 *R/jsSurveyGadget.R
 5f6097df8b6136e0c87c06e137d93f73 *R/kaplan.R
 2e1defa23e099469df374fdd0c188c3d *R/regress.R
 80704e43442adfc08548477e63ae0c1f *R/roc.R
@@ -23,7 +23,7 @@ ba16417a284057da14d42bce56281afc *README.md
 9704573e1dc1884eaa95d0c940badfee *build/vignette.rds
 d0540a5c3d6d68286ddefe4cc666d1f2 *inst/doc/jsmodule.R
 71fabd364dfc200efe5800621190c358 *inst/doc/jsmodule.Rmd
-e80472964eb402ed25fa27f013d7de87 *inst/doc/jsmodule.html
+ded417b738c64ffde569478a60efefd0 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 26d57048c00fe849387121bdfec7e841 *man/FilePs.Rd
 bd80b3f5ee96b06a03a3d3dac32fe7e5 *man/FilePsInput.Rd
@@ -85,7 +85,7 @@ e4cabe5cdfcce57909e986a21545f4dd *man/tb1simple2.Rd
 dfb075dcf69aa414eb9d6a494b789f1b *tests/testthat.R
 b7004ef1689f880c38548a1371eafa41 *tests/testthat/shinytest/basic/app.R
 cffa7b29be045fbcb55d77df1a31c09e *tests/testthat/shinytest/basic/global.R
-6997a7d857ddf1d188bc65d2e9a6e65e *tests/testthat/shinytest/basic/tests/basicTest-expected/001.json
+af65b301fdcda32e140290f148a8ab5d *tests/testthat/shinytest/basic/tests/basicTest-expected/001.json
 44ecb48a7d4a4bc61451a1ba563aa55e *tests/testthat/shinytest/basic/tests/basicTest.R
 a69015f9fe24b1b5af72050fb5b7bd56 *tests/testthat/test-display2.R
 4eae468c5af1fb98ca244d0eb0d310f8 *tests/testthat/test-mkfun.R
