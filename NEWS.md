@@ -1,3 +1,22 @@
+# jsmodule 1.0.4
+
+## Bug fixes
+
+* **Cox model** of Basic statistics module.
+
+# jsmodule 1.0.3
+
+## Bug fixes
+
+* Incorrect p-value when applying cluster options.
+
+* PS matching: allow continuous variables as Independent variables
+
+## Update
+
+* PS matching: allow 1:N matching.
+
+
 # jsmodule 1.0.2
 
 * Update: Stop running ShinyApps by closing the browser window.
