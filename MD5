@@ -1,6 +1,6 @@
-f3f4aa07b7f42faeacf385abc400ae80 *DESCRIPTION
+7fd13f7cb7c5b045e7d0e24b7b2a2fba *DESCRIPTION
 1ad3419a8b3c586f8c33f78bbb093e7c *NAMESPACE
-4e2de0ef356bf610479e0d864f6fb116 *NEWS.md
+32ea6d7034c7adc6fa62fc7b84177a9f *NEWS.md
 8811c55ec8774cbe06e78a557a81205e *R/FilePsInput.R
 a4080656015a69747447f46174f9338c *R/FileRepeatedInput.R
 c5c9f0bf44341eea8e8dec5b56f373e9 *R/FileSurveyInput.R
@@ -23,7 +23,7 @@ ba16417a284057da14d42bce56281afc *README.md
 97f489a858ccd7bf363b09cea5b9be56 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 71fabd364dfc200efe5800621190c358 *inst/doc/jsmodule.Rmd
-90d5e4c5e076cea3b9e7dd358036e386 *inst/doc/jsmodule.html
+c41add508a328e9eb08ee646d779c426 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 26d57048c00fe849387121bdfec7e841 *man/FilePs.Rd
 bd80b3f5ee96b06a03a3d3dac32fe7e5 *man/FilePsInput.Rd
@@ -85,7 +85,7 @@ e08d03f0d299c6a628d2a10aec936c60 *man/tb1simple2.Rd
 dfb075dcf69aa414eb9d6a494b789f1b *tests/testthat.R
 b7004ef1689f880c38548a1371eafa41 *tests/testthat/shinytest/basic/app.R
 cffa7b29be045fbcb55d77df1a31c09e *tests/testthat/shinytest/basic/global.R
-af65b301fdcda32e140290f148a8ab5d *tests/testthat/shinytest/basic/tests/basicTest-expected/001.json
+a1349ac6eb05596768fce2913116f269 *tests/testthat/shinytest/basic/tests/basicTest-expected/001.json
 44ecb48a7d4a4bc61451a1ba563aa55e *tests/testthat/shinytest/basic/tests/basicTest.R
 a69015f9fe24b1b5af72050fb5b7bd56 *tests/testthat/test-display2.R
 4eae468c5af1fb98ca244d0eb0d310f8 *tests/testthat/test-mkfun.R
