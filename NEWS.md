@@ -1,3 +1,12 @@
+# jsmodule 1.1.1
+
+## Update
+
+* Add landmark analysis to kaplan-meier analysis. Pease update **jskm to 0.4.0** version.
+
+* Add option **hide 95%CI of AUC, NRIIDI** to `timerocModule`. It reduces computation time.
+
+
 # jsmodule 1.1.0
 
 * Apply **AIC based stepwise selection** to linear/logistic regression, cox model.
