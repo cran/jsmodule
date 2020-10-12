@@ -125,7 +125,7 @@ FilePsInput <- function(id, label = "Upload data (csv/xlsx/sav/sas7bdat/dta)") {
 FilePs <- function(input, output, session, nfactor.limit = 20) {
 
   ## To remove NOTE.
-  BinaryGroupRandom <- variable <- val_label <- NULL
+  ID.pscal2828 <- BinaryGroupRandom <- variable <- val_label <- NULL
 
   # The selected file, if any
   userFile <- eventReactive(input$file, {
@@ -181,7 +181,7 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
 
 
     naCol <- names(out)[colSums(is.na(out)) > 0]
-    out <- out[, .SD, .SDcols = -naCol]
+    #out <- out[, .SD, .SDcols = -naCol]
 
     data_varStruct = list(variable = names(out))
 
@@ -198,7 +198,7 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
     except_vars <- names(nclass)[ nclass== 1]
     add_vars <- names(nclass)[nclass >= 1 &  nclass <= 5]
     #factor_vars_ini <- union(factor_vars, add_vars)
-    naomit <- ifelse(length(naCol) == 0, "Data has <B>no</B> missing values.", paste("Column <B>", paste(naCol, collapse = ", "), "</B> are(is) excluded due to missing value.", sep = ""))
+    naomit <- ifelse(length(naCol) == 0, "Data has <B>no</B> missing values.", paste("Column <B>", paste(naCol, collapse = ", "), "</B> contain missing values.", sep = ""))
     return(list(data = out, data_varStruct = data_varStruct, factor_original = factor_vars,
                 conti_original = conti_vars, factor_adds_list = factor_adds_list,
                 factor_adds = add_vars, naCol = naCol, except_vars = except_vars, ref = ref, naomit = naomit)
@@ -219,8 +219,8 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
     if (is.null(input$file)){return(NULL)}
 
     radioButtons(session$ns("pcut_ps"), label = "Default p-value cut for ps calculation",
-                 choices = c(0.05, 0.1, 0.2),
-                 selected = 0.1, inline =T)
+                 choices = c("No", 0.05, 0.1, 0.2),
+                 selected = "No", inline =T)
   })
 
   output$ratio <- renderUI({
@@ -500,13 +500,17 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
       )
 
       vars <- setdiff(setdiff(names(data()$data), data()$except_vars),  c(input$var_subset, input$group_pscal))
-      varsIni <- sapply(vars,
-                        function(v){
-                          forms <- as.formula(paste(input$group_pscal, "~", v))
-                          coef <- tryCatch(summary(glm(forms, data = data()$data, family = binomial))$coefficients, error = function(e){return(NULL)})
-                          sigOK <- !all(coef[-1, 4] > as.numeric(input$pcut_ps))
-                          return(sigOK)
-                        })
+      varsIni <- 1
+      if (input$pcut_ps != "No"){
+        varsIni <- sapply(vars,
+                          function(v){
+                            forms <- as.formula(paste(input$group_pscal, "~", v))
+                            coef <- tryCatch(summary(glm(forms, data = data()$data, family = binomial))$coefficients, error = function(e){return(NULL)})
+                            sigOK <- !all(coef[-1, 4] > as.numeric(input$pcut_ps))
+                            return(sigOK)
+                          })
+      }
+
       tagList(
         selectInput(session$ns("indep_pscal"), label = "Independent variables for PS calculation",
                     choices = mklist(data()$data_varStruct, vars), multiple = T,
@@ -530,15 +534,21 @@ FilePs <- function(input, output, session, nfactor.limit = 20) {
       return(NULL)
     }
     data <- data.table(data()$data)
+    data$ID.pscal2828 <- 1:nrow(data)
+    case.naomit <- which(complete.cases(data[, .SD, .SDcols = c(input$group_pscal, input$indep_pscal)]))
+    data.naomit <- data[case.naomit]
+    data.na <- data[-case.naomit]
+    data.na$pscore <- NA
+    data.na$iptw <- NA
 
     forms <- as.formula(paste(input$group_pscal, " ~ ", paste(input$indep_pscal, collapse = "+"), sep=""))
-    m.out <- MatchIt::matchit(forms, data = data, caliper = input$caliper, ratio = as.integer(input$ratio_ps))
+    m.out <- MatchIt::matchit(forms, data = data.naomit[, .SD, .SDcols = c("ID.pscal2828", input$group_pscal, input$indep_pscal)], caliper = input$caliper, ratio = as.integer(input$ratio_ps))
     pscore <- m.out$distance
     iptw <- ifelse(m.out$treat == levels(m.out$treat)[2], 1/pscore,  1/(1-pscore))
-    wdata <- cbind(data, pscore, iptw)
 
-    mdata <- MatchIt::match.data(m.out, distance = "pscore")
-    return(list(data = wdata, matdata = mdata[, -grep("weights", names(mdata))], data.label = data()$label, naomit = data.info()$naomit, group_var = input$group_pscal))
+    wdata <- rbind(data.na, cbind(data.naomit, pscore, iptw))
+
+    return(list(data = wdata, matdata = data[ID.pscal2828 %in% match.data(m.out)$ID.pscal2828], data.label = data()$label, naomit = data.info()$naomit, group_var = input$group_pscal))
   })
 
 
