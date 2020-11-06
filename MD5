@@ -1,10 +1,10 @@
-9147ae1c1c9789aecdd7179d022f0833 *DESCRIPTION
+33f3f7cfd97ef038774d8db061a0aaf3 *DESCRIPTION
 86deb7755fbf56eab6ea6e963f16e1a0 *NAMESPACE
-2845851118c2668fbcced38efc8a8bfc *NEWS.md
+894d1bc32fcc4c0b229a5e4bfb97b1b2 *NEWS.md
 e2ebcec68ea664496824c5ad442c36dc *R/FilePsInput.R
 a4080656015a69747447f46174f9338c *R/FileRepeatedInput.R
 c5c9f0bf44341eea8e8dec5b56f373e9 *R/FileSurveyInput.R
-9eb73855e7d8ee90d1398756606b8f3b *R/coxph.R
+439b2cf51b61782263917c09235d93ad *R/coxph.R
 8b6ddd6a97996925d2209eea49cffdc2 *R/csvFileInput.R
 91afddc1b33bf486b4f368af4d021e9c *R/display2.R
 52ad25ae7171997559662169a9baa3e7 *R/gee.R
@@ -23,7 +23,7 @@ ba16417a284057da14d42bce56281afc *README.md
 b9e1c97cd175dcfd30c2e26651735784 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 71fabd364dfc200efe5800621190c358 *inst/doc/jsmodule.Rmd
-1096ab357996333b9c19b297f3e18417 *inst/doc/jsmodule.html
+c2b0ac604207ed7690f6c07cf8145071 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 26d57048c00fe849387121bdfec7e841 *man/FilePs.Rd
 bd80b3f5ee96b06a03a3d3dac32fe7e5 *man/FilePsInput.Rd
