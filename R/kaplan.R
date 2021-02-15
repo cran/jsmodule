@@ -40,6 +40,7 @@ kaplanUI <- function(id) {
     uiOutput(ns("eventtime")),
     uiOutput(ns("indep")),
     uiOutput(ns("cutconti")),
+    checkboxInput(ns("scale"), "% y scale", F),
     checkboxInput(ns("cumhaz"), "Show cumulative incidence", F),
     checkboxInput(ns("pval"), "Show p-value(log-rank test)", T),
     checkboxInput(ns("table"), "Show table", T),
@@ -161,7 +162,7 @@ optionUI <- function(id) {
 #' @param output output
 #' @param session session
 #' @param data Reactive data
-#' @param data_label Reactuve data label
+#' @param data_label Reactive data label
 #' @param data_varStruct Reactive List of variable structure, Default: NULL
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param design.survey Reactive survey data. default: NULL
@@ -554,7 +555,7 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
         range.y <- c(0, 1)
       }
 
-      xstep.default <- ifelse(xmax <= 365, 1, 5)
+      xstep.default <- ifelse(xmax <= 365, 0.5, 5)
 
 
 
@@ -607,25 +608,30 @@ kaplanModule <- function(input, output, session, data, data_label, data_varStruc
       cut.landmark <- NULL
     }
 
+    surv.scale <- "default"
+    if (input$scale == T){
+      surv.scale <- "percent"
+    }
+
     if (is.null(design.survey)){
       if (is.null(id.cluster)){
         return(
           jskm::jskm(res.km, pval = input$pval, marks= input$marks, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
                      cumhaz= input$cumhaz, cluster.option = "None", cluster.var = NULL, data = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x, dashed = dashed, cut.landmark = cut.landmark,
-                     showpercent = input$showpercent)
+                     showpercent = input$showpercent, surv.scale = surv.scale)
         )
       } else{
         return(
           jskm::jskm(res.km, pval = input$pval, marks= input$marks, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
                      cumhaz= input$cumhaz, cluster.option = "cluster", cluster.var = id.cluster(), data = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x, dashed = dashed, cut.landmark = cut.landmark,
-                     showpercent = input$showpercent)
+                     showpercent = input$showpercent, surv.scale = surv.scale)
         )
       }
     } else{
       return(
         jskm::svyjskm(res.km, pval = input$pval, table= input$table, ylab= ylab, ystrataname = yst.name, ystratalabs = yst.lab, ci= input$ci, timeby = input$timeby, xlims = input$xlims, ylims = input$ylims,
                       cumhaz= input$cumhaz, design = data.km, pval.coord = pval.coord, legendposition = legend.p, linecols = pal, xlabs = text.x, dashed = dashed, cut.landmark = cut.landmark,
-                      showpercent = input$showpercent)
+                      showpercent = input$showpercent, surv.scale = surv.scale)
       )
     }
   })

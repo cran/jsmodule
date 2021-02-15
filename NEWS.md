@@ -1,5 +1,19 @@
-# jsmodule 1.1.5
+# jsmodule 1.1.6
 
+## Fix & update
+
+* New module `scatterplotUI` & `scatterplotServer`: scatterplot using **[ggpubr](https://rpkgs.datanovia.com/ggpubr/)**: apply to **Basic statistics**
+
+* `timerocModule`, `rocModule`: Compare ROC curve even if there are different sample size(na omit) 
+
+* Change **timeby unit** from 1 to 0.5 (when <365) 
+
+* Add **surv.scale** option to kaplan-meier plot
+
+* Fix PS matching error with missing values  
+
+# jsmodule 1.1.5
+25
 ## Fix 
 
 * Fix according to **[MatchIt](https://github.com/kosukeimai/MatchIt) 4.0** update.
