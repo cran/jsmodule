@@ -1,3 +1,9 @@
+# jsmodule 1.1.8
+
+## Update
+
+* Change **emf** to **pptx**(editable) in figure download.
+
 # jsmodule 1.1.7
 
 ## Bug fix
@@ -19,7 +25,7 @@
 * Fix PS matching error with missing values  
 
 # jsmodule 1.1.5
-25
+
 ## Fix 
 
 * Fix according to **[MatchIt](https://github.com/kosukeimai/MatchIt) 4.0** update.

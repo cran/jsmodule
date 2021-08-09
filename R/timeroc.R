@@ -87,20 +87,16 @@ timerocUI <- function(id) {
 
 timeROChelper <- function(var.event, var.time, vars.ind, t, data, design.survey = NULL, id.cluster = NULL, iid = T) {
   data[[var.event]] <- as.numeric(as.vector(data[[var.event]]))
-  form <- paste0("survival::Surv(", var.time, ",", var.event, ") ~ " , paste(vars.ind, collapse = "+"))
-
-  if (!is.null(id.cluster)){
-    forms <- as.formula(paste0("survival::Surv(", var.time, ",", var.event, ") ~ " , paste(vars.ind, collapse = "+"), "+ cluster(", id.cluster, ")"))
-    #forms <- as.formula(paste0(form, "+ cluster(", id.cluster, ")"))
-    #data <- na.omit(data[, .SD, .SDcols = c(var.event, var.time, vars.ind, id.cluster)])
-  } else{
-    forms <- as.formula(form)
-    #data <- na.omit(data[, .SD, .SDcols = c(var.event, var.time, vars.ind)])
-  }
+  forms <- as.formula(paste0("survival::Surv(", var.time, ",", var.event, ") ~ " , paste(vars.ind, collapse = "+")))
 
   cmodel <- NULL
   if (is.null(design.survey)){
-    cmodel <- survival::coxph(forms, data = data, y = T)
+    if (!is.null(id.cluster)){
+      cmodel <- survival::coxph(forms, data = data, y = T, cluster = get(id.cluster))
+    } else{
+      cmodel <- survival::coxph(forms, data = data, y = T)
+    }
+
   } else{
     cmodel <- survey::svycoxph(forms, design = design.survey, y = T)
   }
@@ -297,6 +293,9 @@ survIDINRI_helper <- function(var.event, var.time, list.vars.ind, t, data, dec.a
 #' @export
 #' @importFrom stats quantile median
 #' @importFrom data.table setkey rbindlist data.table
+#' @importFrom rvg dml
+#' @importFrom officer read_pptx add_slide ph_with ph_location
+
 timerocModule <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, id.cluster = NULL, iid = T, NRIIDI = T) {
 
   ## To remove NOTE.
@@ -648,8 +647,8 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
     tagList(
       column(4,
              selectizeInput(session$ns("file_ext"), "File extension (dpi = 300)",
-                            choices = c("jpg","pdf", "tiff", "svg", "emf"), multiple = F,
-                            selected = "jpg"
+                            choices = c("jpg","pdf", "tiff", "svg", "pptx"), multiple = F,
+                            selected = "pptx"
              )
       ),
       column(4,
@@ -687,10 +686,12 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
                        Sys.sleep(0.01)
                      }
 
-                     if (input$file_ext == "emf"){
-                       devEMF::emf(file, width = input$fig_width, height = input$fig_height, coordDPI = 300, emfPlus = F)
-                       print(timerocList()$plot)
-                       grDevices::dev.off()
+                     if (input$file_ext == "pptx"){
+                       my_vec_graph <- rvg::dml(ggobj  = timerocList()$plot)
+                       doc <- officer::read_pptx()
+                       doc <- officer::add_slide(doc, layout = "Title and Content", master = "Office Theme")
+                       doc <- officer::ph_with(doc, my_vec_graph, location = officer::ph_location(width = input$fig_width, height = input$fig_height))
+                       print(doc, target = file)
 
                      } else{
                        ggsave(file, timerocList()$plot, dpi = 300, units = "in", width = input$fig_width, height =input$fig_height)
@@ -766,6 +767,8 @@ timerocModule <- function(input, output, session, data, data_label, data_varStru
 #' @export
 #' @importFrom stats quantile median
 #' @importFrom data.table setkey rbindlist data.table
+#' @importFrom rvg dml
+#' @importFrom officer read_pptx add_slide ph_with ph_location
 timerocModule2 <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, id.cluster = NULL, iid = T, NRIIDI = T) {
 
   ## To remove NOTE.
@@ -1097,8 +1100,8 @@ timerocModule2 <- function(input, output, session, data, data_label, data_varStr
     tagList(
       column(4,
              selectizeInput(session$ns("file_ext"), "File extension (dpi = 300)",
-                            choices = c("jpg","pdf", "tiff", "svg", "emf"), multiple = F,
-                            selected = "jpg"
+                            choices = c("jpg","pdf", "tiff", "svg", "pptx"), multiple = F,
+                            selected = "pptx"
              )
       ),
       column(4,
@@ -1136,10 +1139,12 @@ timerocModule2 <- function(input, output, session, data, data_label, data_varStr
                        Sys.sleep(0.01)
                      }
 
-                     if (input$file_ext == "emf"){
-                       devEMF::emf(file, width = input$fig_width, height = input$fig_height, coordDPI = 300, emfPlus = F)
-                       print(timerocList()$plot)
-                       grDevices::dev.off()
+                     if (input$file_ext == "pptx"){
+                       my_vec_graph <- rvg::dml(ggobj  = timerocList()$plot)
+                       doc <- officer::read_pptx()
+                       doc <- officer::add_slide(doc, layout = "Title and Content", master = "Office Theme")
+                       doc <- officer::ph_with(doc, my_vec_graph, location = officer::ph_location(width = input$fig_width, height = input$fig_height))
+                       print(doc, target = file)
 
                      } else{
                        ggsave(file, timerocList()$plot, dpi = 300, units = "in", width = input$fig_width, height =input$fig_height)
