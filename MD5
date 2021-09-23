@@ -1,6 +1,6 @@
-5607302fa440a07d5f47fa6a8b95ee20 *DESCRIPTION
-a8ec91c26d2657dc74d4e819fecfcafc *NAMESPACE
-5c60275e88f534fa3210e0ec92ca4a3d *NEWS.md
+a4d46fd96336cae1f0b6770c3a0f66d6 *DESCRIPTION
+c829f03974a306f59b8880203e934596 *NAMESPACE
+45efcc79c0cdd0e9b9c092f52e80e5ba *NEWS.md
 2de08053db3ed2b6df2b219aaaf1a55a *R/FilePsInput.R
 7a7949b014bb748302e3b9911922efa6 *R/FileRepeatedInput.R
 0162962782c8b9b62680c8921964ef44 *R/FileSurveyInput.R
@@ -19,12 +19,12 @@ c234c3c19427956e61817adaeee2415d *R/regress.R
 2dd7b2be1e68369ee72dbd90afe52d28 *R/scatter.R
 c93160826e2d0d405ca491338b0018ac *R/tb1.R
 1290029f8e97d3e405c56c42628d46a8 *R/tb1simple.R
-6d806ea8a78413cae8444b9d2244e66a *R/timeroc.R
+799e00851575d5d34d8772eddb391787 *R/timeroc.R
 96411643328f8d2c37619ed5c7e0adc7 *README.md
-6e1a9faa79ef772bfb4339eda16706da *build/vignette.rds
+0d95feaa50b2dbca3be3bb3527406db0 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 71fabd364dfc200efe5800621190c358 *inst/doc/jsmodule.Rmd
-777119c1fb138f84117b299d41c7cd04 *inst/doc/jsmodule.html
+e2fe5089c488830e7b54cc1db8ac7c66 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 26d57048c00fe849387121bdfec7e841 *man/FilePs.Rd
 bd80b3f5ee96b06a03a3d3dac32fe7e5 *man/FilePsInput.Rd
@@ -80,8 +80,8 @@ c99947021698f5679861a7a9a759f792 *man/tb1moduleUI.Rd
 f5ea0b2c1f18a99c2d56daa7fe0e64cd *man/tb1simple.Rd
 cdc81df6701a7a5d5b3a8be69667ccf7 *man/tb1simple2.Rd
 9057feca9b03eeb40e186db4c0773408 *man/tb1simpleUI.Rd
-a9f22a51343fac88ed3a545823d202d6 *man/timeROC_table.Rd
-010e3c1a558bb2cc0e3f6b832b6a5a12 *man/timeROChelper.Rd
+98dbcdc603a29628f6ac701a188bef82 *man/timeROC_table.Rd
+06d8dd0a1a7ce86b212902d6267cb665 *man/timeROChelper.Rd
 95794980e5b4e514177a6aad686ea10b *man/timerocModule.Rd
 5a5e892749ae62ec321da2053084210b *man/timerocUI.Rd
 dfb075dcf69aa414eb9d6a494b789f1b *tests/testthat.R
