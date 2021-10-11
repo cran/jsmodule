@@ -1,3 +1,13 @@
+# jsmodule 1.2.0
+
+## Update
+
+* Add `coxph` ties option to `coxModule`: **ties.coxph**
+
+## Bugfix
+
+* `kaplanModule` runs even if **timeby = 1**
+
 # jsmodule 1.1.9
 
 ## Update
