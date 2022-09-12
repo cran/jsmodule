@@ -1,3 +1,13 @@
+# jsmodule 1.3.2
+
+## Update 
+
+* Add cutoff information to `timerocModule`, `rocModule`   when 1 model, 1 indpendent variable.
+
+## Fix
+
+* `timerocModule`: Invert plot when auc < 0.5
+
 # jsmodule 1.3.1
 
 ## Fix
