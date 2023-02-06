@@ -1,3 +1,19 @@
+# jsmodule 1.3.6
+
+## Fix: 
+
+* `kaplanModule` PPT download
+
+
+# jsmodule 1.3.5
+
+## Fix: 
+
+* `rocModule`
+
+* Change `jsRepeatedGadjet` to `jsRepeatedGadget`
+
+
 # jsmodule 1.3.4
 
 ## Fix and Update: `rocModule`
