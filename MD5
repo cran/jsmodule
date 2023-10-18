@@ -1,6 +1,6 @@
-d45e44fbef082d55dc43d72537781736 *DESCRIPTION
+a5c7ffa2feb88d4d05304fb417adfc37 *DESCRIPTION
 62527751b454c4b69ca5a84e49b360ed *NAMESPACE
-d4a5cd22c2b574e32d9e8e546ea4709e *NEWS.md
+5672c4a72700141aa75c00d1f200870b *NEWS.md
 0631e32562cd7057dd22e185a06cf613 *R/FilePsInput.R
 6d2fb8eec8be3016b7b9177cdde1ff66 *R/FileRepeatedInput.R
 d766c17153d6d2710e022928f8f94625 *R/FileSurveyInput.R
@@ -10,7 +10,7 @@ e9da4c7ec79e00203c378e4cf70e4f94 *R/bar.R
 e1668733e3d8671b5debe3f88f673041 *R/csvFileInput.R
 d0e83889c31f7e8009b863fe3422f6f6 *R/display2.R
 31a966a2224c0912a5ec1497c5c9ecbd *R/gee.R
-bef24f3bd23af6e1102393d1b83345e7 *R/ggpairs.R
+8b98356aa38308d17e57884c8423a0f1 *R/ggpairs.R
 66d1a68862d83b70974a543e860b0aaa *R/histogram.R
 dec8428be6839b83634295452f6cb4b1 *R/jsBasicGadget.R
 6e9e66344f18be5dbba8a52e76a179c6 *R/jsPropensityGadget.R
@@ -19,16 +19,16 @@ aadb44edabc8d955f9c644cb4cc8193b *R/jsRepeatedGadget.R
 41012988af0e74f61180a90303b2ac7b *R/kaplan.R
 0009573e351ac526fdc7af2b7bf0bcf3 *R/line.R
 2b2553b6c053934da33002afaafb15e4 *R/regress.R
-3384028c79344bcd9b0e68e52ac0c21f *R/roc.R
+a88592f787a36ffc5dab4201c8aaaa33 *R/roc.R
 7a76bc4d7fa98603693498a68893e01b *R/scatter.R
-a8bceada2614d4640ef0ac10a8d73158 *R/tb1.R
+b981e2a5423cb0b608e78c907d7d945e *R/tb1.R
 92a74979c9dde861c78351df2a5b196f *R/tb1simple.R
 2182f71eec8081457ae73955b000326a *R/timeroc.R
 a8916513cfaefeac24c6d819b967c2a5 *README.md
 a6b9e506cd9770d8c4ca5323112cd373 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 c16d50eb486ee503eb15a270e1a36db3 *inst/doc/jsmodule.Rmd
-da8ad1d640d884c644c38761ff3c9def *inst/doc/jsmodule.html
+1c7391f75262e422653730368eec6f0c *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 a896027c0c1da8c86bcc274b9842865b *inst/www/style.css
 1c645c276e98553c360268567867d13a *man/FilePs.Rd
