@@ -21,39 +21,47 @@ Shiny module UI for forestcox
 Shinymodule UI for forestglm
 }
 \examples{
-
-library(shiny);library(DT)
-
-mtcars$vs<-factor(mtcars$vs)
-mtcars$am<-factor(mtcars$am)
-mtcars$kk<-factor(as.integer(mtcars$disp>= 150))
-mtcars$kk1<-factor(as.integer(mtcars$disp >= 200))
-
-out<-mtcars
-
+library(shiny)
+library(DT)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am)
+mtcars$kk <- factor(as.integer(mtcars$disp >= 150))
+mtcars$kk1 <- factor(as.integer(mtcars$disp >= 200))
 
 ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
-      forestglmUI('Forest')
+      forestglmUI("Forest")
     ),
     mainPanel(
-      DTOutput('tablesub')
+      tabsetPanel(
+        type = "pills",
+        tabPanel(
+          title = "Data",
+          DTOutput("tablesub"),
+        ),
+        tabPanel(
+          title = "figure",
+          plotOutput("forestplot", width = "100\%"),
+          ggplotdownUI("Forest")
+        )
+      )
     )
   )
 )
 
-
+out <- mtcars
 
 server <- function(input, output, session) {
-  data<-reactive(out)
-  label<-reactive(jstable::mk.lev(out))
-  outtable<-forestglmServer('Forest',data=data,data_label=label,family='gaussian')
-  output$tablesub<-renderDT({
-    outtable()
+  data <- reactive(out)
+  label <- reactive(jstable::mk.lev(out))
+  outtable <- forestglmServer("Forest", data = data, data_label = label, family = "binomial")
+  output$tablesub <- renderDT({
+    outtable()[[1]]
+  })
+  output$forestplot <- renderPlot({
+    outtable()[[2]]
   })
 }
-
-
 
 }
