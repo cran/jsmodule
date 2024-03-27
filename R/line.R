@@ -14,6 +14,7 @@
 #'       lineUI("line")
 #'     ),
 #'     mainPanel(
+#'       optionUI("line"),
 #'       plotOutput("line_plot"),
 #'       ggplotdownUI("line")
 #'     )
@@ -48,12 +49,25 @@ lineUI <- function(id, label = "lineplot") {
     checkboxInput(ns("linetype"), "Linetype"),
     checkboxInput(ns("jitter"), "Jitter"),
     checkboxInput(ns("rev_y"), "Reverse Y-axis"),
+    uiOutput(ns("pvalue")),
     uiOutput(ns("subvar")),
     uiOutput(ns("subval")),
-    uiOutput(ns("size")),
-    uiOutput(ns("position.dodge"))
+    # uiOutput(ns("size")),
+    # uiOutput(ns("position.dodge"))
   )
 }
+
+
+# optionUI <- function(id) {
+#   # Create a namespace function using the provided id
+#   ns <- NS(id)
+#
+#   shinyWidgets::dropdownButton(
+#     uiOutput(ns("option_line")),
+#     circle = TRUE, status = "danger", icon = icon("gear"), width = "300px",
+#     tooltip = shinyWidgets::tooltipOptions(title = "Click to see other options !")
+#   )
+# }
 
 
 #' @title lineServer: shiny module server for lineplot.
@@ -75,6 +89,7 @@ lineUI <- function(id, label = "lineplot") {
 #'       lineUI("line")
 #'     ),
 #'     mainPanel(
+#'       optionUI("line"),
 #'       plotOutput("line_plot"),
 #'       ggplotdownUI("line")
 #'     )
@@ -98,10 +113,12 @@ lineUI <- function(id, label = "lineplot") {
 #' @export
 #' @import shiny
 #' @importFrom data.table data.table .SD :=
-#' @importFrom ggpubr ggline
+#' @importFrom ggpubr ggline stat_compare_means geom_pwc
 #' @importFrom ggplot2 ggsave scale_y_reverse
 #' @importFrom rvg dml
 #' @importFrom officer read_pptx add_slide ph_with ph_location
+#' @importFrom scales label_pvalue
+#' @importFrom shinyWidgets dropdownButton tooltipOptions
 
 
 
@@ -167,6 +184,83 @@ lineServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limi
       })
 
 
+      output$pvalue <- renderUI({
+        req(!is.null(input$x_line))
+
+        tglist <- tagList()
+        if (input$strata != "None") {
+          if (vlist()$nclass_factor[input$strata] < 3) {
+            pval.choices <- c("T-test" = "t.test", "Wilcoxon" = "wilcox.test")
+          } else {
+            pval.choices <- c("ANOVA" = "anova", "Kruskal-Wallis" = "kruskal.test")
+          }
+        } else {
+          pval.choices <- c("ANOVA" = "anova", "Kruskal-Wallis" = "kruskal.test")
+        }
+
+        tglist <- tagAppendChildren(
+          tglist,
+          div("P value Option") %>% strong(),
+          tabsetPanel(
+            id = session$ns("side_tabset_isstrata"),
+            type = "hidden",
+            selected = "strataFalse",
+            tabPanel(
+              "strataTrue",
+              checkboxInput(session$ns("isStrata"), "P value"),
+            ),
+            tabPanel(
+              "strataFalse",
+              NULL
+            )
+          ),
+          tabsetPanel(
+            id = session$ns("side_tabset_spvalradio"),
+            type = "hidden",
+            selected = "isStrataFalse",
+            tabPanel(
+              "isStrataTrue",
+              radioButtons(
+                session$ns("s_pvalue"),
+                label = NULL,
+                inline = TRUE,
+                choices = pval.choices
+              )
+            ),
+            tabPanel(
+              "isStrataFalse",
+              NULL
+            )
+          )
+        )
+
+        return(tglist)
+      })
+
+
+      lineInputError <- reactive({
+        msg <- tryCatch(
+          {
+            print(lineInput() %>% suppressWarnings())
+          },
+          warning = function(e) {
+            res <- e
+            temp <- e
+            while (!is.null(temp$message)) {
+              res <- temp
+              temp <- temp$parent
+            }
+            return(res$message)
+          },
+          error = function(e) {
+            return(e$message)
+          }
+        )
+
+        ifelse(!is.ggplot(msg), msg, "Success")
+      })
+
+
       observeEvent(input$subcheck, {
         output$subvar <- renderUI({
           req(input$subcheck == T)
@@ -187,17 +281,61 @@ lineServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limi
           )
         })
       })
-      output$size <- renderUI({
-        tagList(
-          fluidRow(
-            column(6, numericInput(session$ns("size"), "Line size", value = 0.5)),
-            column(6, numericInput(session$ns("pointsize"), "Point size", value = 0.5))
-          )
-        )
+
+
+      observeEvent(input$x_line, {
+        msg <- lineInputError()
+        if (msg != "" & msg != "Success") showNotification(msg, type = "warning")
       })
-      output$position.dodge <- renderUI({
-        sliderInput(session$ns("positiondodge"), "Position dodge", min = 0, max = 1, value = 0)
+
+
+      observeEvent(input$strata, {
+        msg <- lineInputError()
+        if (msg != "" & msg != "Success") showNotification(msg, type = "warning")
+
+        if (input$strata != "None") {
+          tabset.selected.strata <- "strataTrue"
+        } else {
+          tabset.selected.strata <- "strataFalse"
+        }
+
+        updateCheckboxInput(session, "isStrata", value = FALSE)
+        updateTabsetPanel(session, "side_tabset_isstrata", selected = tabset.selected.strata)
       })
+
+
+      observeEvent(input$isStrata, {
+        msg <- lineInputError()
+        if (msg != "" & msg != "Success") showNotification(msg, type = "warning")
+        updateTabsetPanel(session, "side_tabset_spvalradio", selected = ifelse(input$isStrata, "isStrataTrue", "isStrataFalse"))
+      })
+
+
+      observeEvent(input$s_pvalue, {
+        msg <- lineInputError()
+        if (msg != "" & msg != "Success") showNotification(msg, type = "warning")
+      })
+
+
+      observeEvent(input$pval_reset, {
+        updateSliderInput(session, "positiondodge", value = 0)
+        updateNumericInput(session, "size", value = 0.5)
+        updateNumericInput(session, "pointsize", value = 0.5)
+        updateSliderInput(session, "pvalfont", value = 4)
+      })
+
+
+      # output$size <- renderUI({
+      #   tagList(
+      #     fluidRow(
+      #       column(6, numericInput(session$ns("size"), "Line size", value = 0.5)),
+      #       column(6, numericInput(session$ns("pointsize"), "Point size", value = 0.5))
+      #     )
+      #   )
+      # })
+      # output$position.dodge <- renderUI({
+      #   sliderInput(session$ns("positiondodge"), "Position dodge", min = 0, max = 1, value = 0)
+      # })
 
       output$subval <- renderUI({
         req(input$subcheck == T)
@@ -223,7 +361,9 @@ lineServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limi
       })
 
       lineInput <- reactive({
-        req(c(input$x_line, input$y_line, input$strata))
+        req(c(input$x_line, input$y_line, input$strata, input$pvalfont, input$s_pvalue, input$positiondodge))
+        req(input$isStrata != "None")
+
         data <- data.table(data())
         label <- data_label()
         add <- switch(input$options,
@@ -259,19 +399,43 @@ lineServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limi
           }
         }
 
+        if (is.null(input$pvalfont)) {
+          line.position.dodge <- 0
+          line.size <- 0.5
+          line.point.size <- 0.5
+          pval.font.size <- 4
+        } else {
+          line.position.dodge <- input$positiondodge
+          line.size <- input$size
+          line.point.size <- input$pointsize
+          pval.font.size <- input$pvalfont
+        }
+
 
         res.plot <- ggpubr::ggline(data, input$x_line, input$y_line,
           color = color, add = add, add.params = add.params, conf.int = input$lineci,
           xlab = label[variable == input$x_line, var_label][1],
           ylab = label[variable == input$y_line, var_label][1], na.rm = T,
-          position = position_dodge(input$positiondodge),
-          size = input$size,
-          point.size = input$pointsize,
+          position = position_dodge(line.position.dodge),
+          size = line.size,
+          point.size = line.point.size,
           linetype = linetype
         )
 
         if (input$rev_y) {
           res.plot <- res.plot + ggplot2::scale_y_reverse()
+        }
+
+        if (input$isStrata & input$strata != "None") {
+          res.plot <- res.plot +
+            ggpubr::stat_compare_means(
+              method = input$s_pvalue,
+              size = pval.font.size,
+              aes(
+                label = scales::label_pvalue(add_p = TRUE)(after_stat(p)),
+                group = !!sym(input$strata)
+              ),
+            )
         }
 
         return(res.plot)
@@ -331,6 +495,24 @@ lineServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limi
           )
         }
       )
+
+
+      # option dropdown menu
+      output$option_kaplan <- renderUI({
+        tagList(
+          h3("Line setting"),
+          fluidRow(
+            column(6, numericInput(session$ns("size"), "Line size", step = 0.5, value = 0.5)),
+            column(6, numericInput(session$ns("pointsize"), "Point size", step = 0.5, value = 0.5))
+          ),
+          sliderInput(session$ns("positiondodge"), "Position dodge", min = 0, max = 1, value = 0),
+          h3("P-value position"),
+          sliderInput(session$ns("pvalfont"), "P-value font size",
+            min = 1, max = 10, value = 4
+          ),
+          actionButton(session$ns("pval_reset"), "reset")
+        )
+      })
 
       return(lineInput)
     }
