@@ -1,7 +1,7 @@
 Package: jsmodule
 Title: 'RStudio' Addins and 'Shiny' Modules for Medical Research
-Version: 1.5.4
-Date: 2024-05-06
+Version: 1.5.5
+Date: 2024-06-06
 Authors@R: c(
   person("Jinseob", "Kim", email = "jinseob2kim@gmail.com", role = c("aut", "cre"),  comment = c(ORCID = "0000-0002-9403-605X")),
   person("Zarathu", role = c("cph", "fnd")),
@@ -15,19 +15,19 @@ Depends: R (>= 3.4.0)
 License: Apache License 2.0
 Encoding: UTF-8
 RoxygenNote: 7.3.1
-Imports: data.table, DT, epiDisplay, forestploter, geepack, GGally,
-        ggplot2, ggpubr, haven, Hmisc, jskm(>= 0.4.4), jstable,
+Imports: data.table, DT, epiDisplay, flextable, forestploter, geepack,
+        GGally, ggplot2, ggpubr, haven, Hmisc, jskm(>= 0.4.4), jstable,
         labelled, MatchIt(>= 3.0.0), maxstat, methods, officer, pROC,
         purrr, RColorBrewer, readr, readxl, rstudioapi, rvg, scales,
-        see, shiny, shinycustomloader, shinyWidgets, stats, survey,
-        survIDINRI, survival, timeROC, utils
+        see, shiny, shinycustomloader, shinyjs, shinyWidgets, stats,
+        survey, survIDINRI, survival, timeROC, utils
 URL: https://jinseob2kim.github.io/jsmodule/,
         https://github.com/jinseob2kim/jsmodule
 BugReports: https://github.com/jinseob2kim/jsmodule/issues
 Suggests: testthat, shinytest, knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2024-05-07 15:06:37 UTC; js
+Packaged: 2024-06-05 12:33:13 UTC; js
 Author: Jinseob Kim [aut, cre] (<https://orcid.org/0000-0002-9403-605X>),
   Zarathu [cph, fnd],
   Hyunki Lee [aut],
@@ -37,4 +37,4 @@ Author: Jinseob Kim [aut, cre] (<https://orcid.org/0000-0002-9403-605X>),
   Jaewoong Heo [aut]
 Maintainer: Jinseob Kim <jinseob2kim@gmail.com>
 Repository: CRAN
-Date/Publication: 2024-05-07 16:00:05 UTC
+Date/Publication: 2024-06-05 16:30:10 UTC
