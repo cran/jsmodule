@@ -1,6 +1,6 @@
-aebc9935ef26ec35a23108fcee746f59 *DESCRIPTION
+7a66a8f23b2a99ce5e3a4a7f794adfa9 *DESCRIPTION
 7ffaa5a7d8d6a2be42dec5a0f0d205c2 *NAMESPACE
-bcc4057fe59a3c209481ce4ec0588982 *NEWS.md
+256d5be29180a66e9ba6175b66c532c6 *NEWS.md
 1585688976fcb4d6508d416ca63e6bbf *R/FilePsInput.R
 55f9b096e1c2223e431510e8a767ccc8 *R/FileRepeatedInput.R
 aad70b24f751e36fbfdfc8224a186c7f *R/FileSurveyInput.R
@@ -26,12 +26,12 @@ d83bbc99a16ad8383fbb9ddf08940b55 *R/jsSurveyGadget.R
 b981e2a5423cb0b608e78c907d7d945e *R/tb1.R
 92a74979c9dde861c78351df2a5b196f *R/tb1simple.R
 2182f71eec8081457ae73955b000326a *R/timeroc.R
-e6e80c70d12a7ee8d65d0521a76722d3 *R/utils.R
+fe99af0fe3635134fc0438f85f797a46 *R/utils.R
 a8916513cfaefeac24c6d819b967c2a5 *README.md
-17aeb82640807fbe131d3189e56c0f4b *build/vignette.rds
+e74d53a500e30c6eb7ed258890d493f6 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 c16d50eb486ee503eb15a270e1a36db3 *inst/doc/jsmodule.Rmd
-74a38fc35d80e68f61cd2a7a3ca674c4 *inst/doc/jsmodule.html
+cdf118cce495c33557b67b286163bda2 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 a896027c0c1da8c86bcc274b9842865b *inst/www/style.css
 1c645c276e98553c360268567867d13a *man/FilePs.Rd
