@@ -1,6 +1,6 @@
-7a66a8f23b2a99ce5e3a4a7f794adfa9 *DESCRIPTION
+e625932dfb7b77b47398ee3c409fdaf9 *DESCRIPTION
 7ffaa5a7d8d6a2be42dec5a0f0d205c2 *NAMESPACE
-256d5be29180a66e9ba6175b66c532c6 *NEWS.md
+18807a03d3943ffa6f9bc7dae1fa29eb *NEWS.md
 1585688976fcb4d6508d416ca63e6bbf *R/FilePsInput.R
 55f9b096e1c2223e431510e8a767ccc8 *R/FileRepeatedInput.R
 aad70b24f751e36fbfdfc8224a186c7f *R/FileSurveyInput.R
@@ -9,7 +9,7 @@ d5e744fa2f0c67fa01653c921312530a *R/bar.R
 9785951afd9ad541585538ebacd081eb *R/coxph.R
 cd61d55d7f1c09857078f095df8eb39d *R/csvFileInput.R
 d0e83889c31f7e8009b863fe3422f6f6 *R/display2.R
-a9651148e95a14021c88aa5d3738bb23 *R/forestcox.R
+8a315df01906c872b6f903918fea08a6 *R/forestcox.R
 21eb6af7b858623dede6242811a10ef0 *R/forestglm.R
 31a966a2224c0912a5ec1497c5c9ecbd *R/gee.R
 8b98356aa38308d17e57884c8423a0f1 *R/ggpairs.R
@@ -31,7 +31,7 @@ a8916513cfaefeac24c6d819b967c2a5 *README.md
 e74d53a500e30c6eb7ed258890d493f6 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 c16d50eb486ee503eb15a270e1a36db3 *inst/doc/jsmodule.Rmd
-cdf118cce495c33557b67b286163bda2 *inst/doc/jsmodule.html
+a3107c86c91a4ffb2e1c13fbdbd6ca81 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 a896027c0c1da8c86bcc274b9842865b *inst/www/style.css
 1c645c276e98553c360268567867d13a *man/FilePs.Rd
