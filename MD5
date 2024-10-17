@@ -1,9 +1,9 @@
-5b9b5bd061693650e23d46b1520611ac *DESCRIPTION
+7968ee5660791210103874d66e093a70 *DESCRIPTION
 05e200778a8b9d1df5880e758f271dfe *NAMESPACE
-ecdecfc2851ca21c1195a0ce20818ac6 *NEWS.md
-1585688976fcb4d6508d416ca63e6bbf *R/FilePsInput.R
-55f9b096e1c2223e431510e8a767ccc8 *R/FileRepeatedInput.R
-aad70b24f751e36fbfdfc8224a186c7f *R/FileSurveyInput.R
+0d33524affeb63735df63a5601a8a9a0 *NEWS.md
+75a3cf25e6b1033328accabb0cdbff33 *R/FilePsInput.R
+53f07facd12f6c9876c5487594598074 *R/FileRepeatedInput.R
+eadae13621582c29da5d0572fadeaa8b *R/FileSurveyInput.R
 d5e744fa2f0c67fa01653c921312530a *R/bar.R
 10e41894e67080eb4608af4adbc15305 *R/box.R
 9785951afd9ad541585538ebacd081eb *R/coxph.R
@@ -19,7 +19,7 @@ eb6e9d863854c38124c8ae90092b9481 *R/jsPropensityGadget.R
 52a25d29d867401b08982f423406ee79 *R/jsRepeatedGadget.R
 d83bbc99a16ad8383fbb9ddf08940b55 *R/jsSurveyGadget.R
 41012988af0e74f61180a90303b2ac7b *R/kaplan.R
-624b47e44a63129a69c914e5036b3ddc *R/line.R
+145e3388e7235bde28a6ca7f5ad579a6 *R/line.R
 2b2553b6c053934da33002afaafb15e4 *R/regress.R
 8eda57eec4a37448b8fdce76cd35835f *R/roc.R
 7a76bc4d7fa98603693498a68893e01b *R/scatter.R
@@ -31,7 +31,7 @@ a8916513cfaefeac24c6d819b967c2a5 *README.md
 e74d53a500e30c6eb7ed258890d493f6 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 c16d50eb486ee503eb15a270e1a36db3 *inst/doc/jsmodule.Rmd
-6e9ca837ccdf8aad6567b85a67e05060 *inst/doc/jsmodule.html
+41436cdb6c23578338289706a1fb20d2 *inst/doc/jsmodule.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 a896027c0c1da8c86bcc274b9842865b *inst/www/style.css
 1c645c276e98553c360268567867d13a *man/FilePs.Rd
