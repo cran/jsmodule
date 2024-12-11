@@ -1,3 +1,12 @@
+# jsmodule 1.6.0 
+## Update
+- Add competing risk analysis in subgroup, Kaplan-meier, regression tab.
+
+# jsmodule 1.5.10
+## Update:
+- Change Boxplot fill type
+
+
 # jsmodule 1.5.9
 ## Bugfix:
 - `sav` file load in `FilePSInput.R`, `FileRepeatedInput.R`, `FileSurveyInput.R`
