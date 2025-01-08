@@ -73,6 +73,7 @@ forestglmUI <- function(id, label = "forestplot") {
 #' @param data_varStruct Reactive List of variable structure, Default: NULL
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param design.survey reactive survey data. default: NULL
+#' @param repeated_id data when repeated id. default: F
 #' @return Shiny module server for forestglm
 #' @details Shiny module server for forestglm
 #' @examples
@@ -137,7 +138,7 @@ forestglmUI <- function(id, label = "forestplot") {
 #' @importFrom rvg dml
 #' @importFrom officer read_pptx add_slide ph_with ph_location
 
-forestglmServer <- function(id, data, data_label, family, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL) {
+forestglmServer <- function(id, data, data_label, family, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, repeated_id = NULL) {
   moduleServer(
     id,
     function(input, output, session) {
@@ -211,6 +212,7 @@ forestglmServer <- function(id, data, data_label, family, data_varStruct = NULL,
         return(setdiff(names(data()), vlist()$isNA_vars))
       })
 
+
       output$group_tbsub <- renderUI({
         selectInput(session$ns("group"), "Group", choices = vlist()$group2_vars, selected = setdiff(vlist()$group2_vars, c(input$dep, dep()[1]))[1])
       })
@@ -269,6 +271,12 @@ forestglmServer <- function(id, data, data_label, family, data_varStruct = NULL,
         # data[[var.event]] <- ifelse(data[[var.day]] > 365 * 5 & data[[var.event]] == 1, 0,  as.numeric(as.vector(data[[var.event]])))
 
         tbsub <- jstable::TableSubgroupMultiGLM(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = coxdata, family = family)
+
+        if (!is.null(repeated_id)) {
+          form <- paste(var.event, " ~ ", group.tbsub, sep = "")
+          form <- as.formula(paste0(form, "+ (1|", repeated_id, ")"))
+          tbsub <- jstable::TableSubgroupMultiGLM(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = coxdata, family = family)
+        }
         # tbsub <-  TableSubgroupMultiGLM(form, var_subgroups = vs, data=coxdata,family=family)
         len <- nrow(label[variable == group.tbsub])
         data <- data.table::setDT(data)

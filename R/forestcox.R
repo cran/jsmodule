@@ -62,6 +62,7 @@
 forestcoxUI <- function(id, label = "forestplot") {
   ns <- NS(id)
   tagList(
+    uiOutput(ns("cluster_id_ui")),
     uiOutput(ns("group_tbsub")),
     uiOutput(ns("dep_tbsub")),
     uiOutput(ns("day_tbsub")),
@@ -83,6 +84,7 @@ forestcoxUI <- function(id, label = "forestplot") {
 #' @param data_varStruct Reactive List of variable structure, Default: NULL
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param design.survey reactive survey data. default: NULL
+#' @param cluster_id cluster option variable for marginal cox model
 #' @return Shiny module server for forestcox
 #' @details Shiny module server for forestcox
 #' @examples
@@ -152,7 +154,7 @@ forestcoxUI <- function(id, label = "forestplot") {
 #' @importFrom rvg dml
 #' @importFrom officer read_pptx add_slide ph_with ph_location
 
-forestcoxServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL) {
+forestcoxServer <- function(id, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, cluster_id = NULL) {
   moduleServer(
     id,
     function(input, output, session) {
@@ -242,6 +244,8 @@ forestcoxServer <- function(id, data, data_label, data_varStruct = NULL, nfactor
         sliderInput(session$ns("time"), "Select time range", min = min(data()[[day]], na.rm = TRUE), max = max(data()[[day]], na.rm = TRUE), value = c(min(data()[[day]], na.rm = TRUE), max(data()[[day]], na.rm = TRUE)))
       })
 
+      #print(cluster_id)
+
       output$xlim_forest <- renderUI({
         req(tbsub)
         data <- tbsub()
@@ -258,11 +262,13 @@ forestcoxServer <- function(id, data, data_label, data_varStruct = NULL, nfactor
           )
           tagList(
             selectInput(session$ns("cmp_event_cox"), "Competing Event",
-                        choices = mklist(data_varStruct(), vlist()$factor_01vars), multiple = FALSE,
-                        selected = NULL),
+              choices = mklist(data_varStruct(), vlist()$factor_01vars), multiple = FALSE,
+              selected = NULL
+            ),
             selectInput(session$ns("cmp_time_cox"), "Competing Time",
-                        choices = mklist(data_varStruct(), vlist()$conti_vars_positive), multiple = FALSE,
-                        selected = NULL)
+              choices = mklist(data_varStruct(), vlist()$conti_vars_positive), multiple = FALSE,
+              selected = NULL
+            )
           )
         })
       })
@@ -299,17 +305,37 @@ forestcoxServer <- function(id, data, data_label, data_varStruct = NULL, nfactor
         if (input$cmp_risk_check) {
           req(input$cmp_event_cox)
           req(input$cmp_time_cox)
-          form<- as.formula(paste("survival::Surv(fgstart, fgstop, fgstatus) ~ ", group.tbsub, sep = ""))
-          cox_data<- data
-          cox_data[[input$cmp_event_cox]]<- as.numeric(as.vector(cox_data[[input$cmp_event_cox]]))
-          cox_data$cmpp_time <- with(cox_data, ifelse(cox_data[[input$dep]]==0, cox_data[[input$cmp_time_cox]], cox_data[[input$day]]))
-          cox_data$cmpp_event <- with(cox_data, ifelse(cox_data[[input$dep]]==0, 2*cox_data[[input$cmp_event_cox]],  1))
-          cox_data$cmpp_event<- factor(cox_data$cmpp_event)
-          fg_data <- survival::finegray(formula = survival::Surv(cmpp_time,cmpp_event) ~ ., data = cox_data)
-          tbsub <- TableSubgroupMultiCox(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = fg_data, time_eventrate = var.time[2], line = F, decimal.hr = 3, decimal.percent = 1, weights = 'fgwt')
-        }else{
+          form <- as.formula(paste("survival::Surv(fgstart, fgstop, fgstatus) ~ ", group.tbsub, sep = ""))
+          cox_data <- data
+          cox_data[[input$cmp_event_cox]] <- as.numeric(as.vector(cox_data[[input$cmp_event_cox]]))
+          cox_data$cmpp_time <- with(cox_data, ifelse(cox_data[[input$dep]] == 0, cox_data[[input$cmp_time_cox]], cox_data[[input$day]]))
+          cox_data$cmpp_event <- with(cox_data, ifelse(cox_data[[input$dep]] == 0, 2 * cox_data[[input$cmp_event_cox]], 1))
+          cox_data$cmpp_event <- factor(cox_data$cmpp_event)
+          fg_data <- survival::finegray(formula = survival::Surv(cmpp_time, cmpp_event) ~ ., data = cox_data)
+          tbsub <- TableSubgroupMultiCox(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = fg_data, time_eventrate = var.time[2], line = F, decimal.hr = 3, decimal.percent = 1, weights = "fgwt")
+          if (!is.null(cluster_id)) {
+            form <- as.formula(
+              paste(
+                "survival::Surv(fgstart, fgstop, fgstatus) ~ ",
+                group.tbsub,
+                " + cluster(", cluster_id, ")",
+                sep = ""
+              )
+            )
+            tbsub <- TableSubgroupMultiCox(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = fg_data, time_eventrate = var.time[2], line = F, decimal.hr = 3, decimal.percent = 1, weights = "fgwt")
+            names(tbsub) <- gsub(paste0("\\s*\\+\\s*cluster\\(", cluster_id, "\\)"), "", names(tbsub))
+          }
+        } else {
           form <- as.formula(paste("Surv(", var.day, ",", var.event, ") ~ ", group.tbsub, sep = ""))
+
           tbsub <- TableSubgroupMultiCox(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = coxdata, time_eventrate = var.time[2], line = F, decimal.hr = 3, decimal.percent = 1)
+          if (!is.null(cluster_id)) {
+            form <- paste("Surv(", var.day, ",", var.event, ") ~ ", group.tbsub, sep = "")
+            form <- as.formula(paste(form, " + cluster(", cluster_id, ")", sep = ""))
+            print(form)
+            tbsub <- TableSubgroupMultiCox(form, var_subgroups = vs, var_cov = setdiff(input$cov, vs), data = coxdata, time_eventrate = var.time[2], line = F, decimal.hr = 3, decimal.percent = 1)
+            names(tbsub) <- gsub(paste0("\\s*\\+\\s*cluster\\(", cluster_id, "\\)"), "", names(tbsub))
+          }
         }
 
 
