@@ -864,13 +864,13 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
         tb <- cbind(rn, data.frame(tb))
         colnames(tb)[1] <- " "
 
-        officer::read_docx() |>
+        officer::read_docx() %>%
           body_add_flextable(
             tb %>%
               flextable() %>%
               autofit() %>%
               theme_booktabs(bold_header = TRUE)
-          ) |>
+          ) %>%
           print(target = file)
       }
     )
@@ -939,13 +939,13 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
         tb <- cbind(rn, data.frame(tb))
         colnames(tb) <- c(" ", cn)
 
-        officer::read_docx() |>
+        officer::read_docx() %>%
           body_add_flextable(
             tb %>%
               flextable() %>%
               autofit() %>%
               theme_booktabs(bold_header = TRUE)
-          ) |>
+          ) %>%
           print(target = file)
       }
     )
@@ -1009,13 +1009,13 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
         tb <- cbind(rn, data.frame(tb))
         colnames(tb) <- c(" ", cn)
 
-        officer::read_docx() |>
+        officer::read_docx() %>%
           body_add_flextable(
             tb %>%
               flextable() %>%
               autofit() %>%
               theme_booktabs(bold_header = TRUE)
-          ) |>
+          ) %>%
           print(target = file)
       }
     )
@@ -1079,13 +1079,13 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
         tb <- cbind(rn, data.frame(tb))
         colnames(tb) <- c(" ", cn)
 
-        officer::read_docx() |>
+        officer::read_docx() %>%
           body_add_flextable(
             tb %>%
               flextable() %>%
               autofit() %>%
               theme_booktabs(bold_header = TRUE)
-          ) |>
+          ) %>%
           print(target = file)
       }
     )
@@ -1178,7 +1178,7 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
         id = "Forest",
         data = data,
         data_label = data.label,
-        cluster_id = id.gee()  # Reactive 값 호출
+        cluster_id = id.gee() # Reactive 값 호출
       )
 
       output$tablesub <- renderDT({
@@ -1191,26 +1191,24 @@ jsRepeatedExtAddin <- function(nfactor.limit = 20, max.filesize = 2048) {
     })
 
     observe({
-    outtable_glm <- forestglmServer("Forest_glm", data = data, data_label = data.label, family = "gaussian", repeated_id = id.gee())
-    output$tablesub_glm <- renderDT({
-      outtable_glm()[[1]]
-    })
-    output$forestplot_glm <- renderPlot({
-      outtable_glm()[[2]]
-    })
+      outtable_glm <- forestglmServer("Forest_glm", data = data, data_label = data.label, family = "gaussian", repeated_id = id.gee())
+      output$tablesub_glm <- renderDT({
+        outtable_glm()[[1]]
+      })
+      output$forestplot_glm <- renderPlot({
+        outtable_glm()[[2]]
+      })
     })
 
     observe({
-    outtable_glmbi <- forestglmServer("Forest_glmbi", data = data, data_label = data.label, family = "binomial", repeated_id = id.gee())
-    output$tablesub_glmbi <- renderDT({
-      outtable_glmbi()[[1]]
+      outtable_glmbi <- forestglmServer("Forest_glmbi", data = data, data_label = data.label, family = "binomial", repeated_id = id.gee())
+      output$tablesub_glmbi <- renderDT({
+        outtable_glmbi()[[1]]
+      })
+      output$forestplot_glmbi <- renderPlot({
+        outtable_glmbi()[[2]]
+      })
     })
-    output$forestplot_glmbi <- renderPlot({
-      outtable_glmbi()[[2]]
-    })
-    })
-
-
   }
 
   # viewer <- dialogViewer("Descriptive statistics", width = 1100, height = 850)

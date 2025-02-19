@@ -1,7 +1,7 @@
 Package: jsmodule
 Title: 'RStudio' Addins and 'Shiny' Modules for Medical Research
-Version: 1.6.1
-Date: 2025-01-08
+Version: 1.6.3
+Date: 2025-02-13
 Authors@R: c(
   person("Jinseob", "Kim", email = "jinseob2kim@gmail.com", role = c("aut", "cre"),  comment = c(ORCID = "0000-0002-9403-605X")),
   person("Zarathu", role = c("cph", "fnd")),
@@ -32,7 +32,7 @@ BugReports: https://github.com/jinseob2kim/jsmodule/issues
 Suggests: testthat, shinytest, knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-01-08 12:48:41 UTC; js
+Packaged: 2025-02-19 09:12:54 UTC; js
 Author: Jinseob Kim [aut, cre] (<https://orcid.org/0000-0002-9403-605X>),
   Zarathu [cph, fnd],
   Hyunki Lee [aut],
@@ -45,4 +45,4 @@ Author: Jinseob Kim [aut, cre] (<https://orcid.org/0000-0002-9403-605X>),
   Jeongmin Seo [aut]
 Maintainer: Jinseob Kim <jinseob2kim@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-01-08 13:10:02 UTC
+Date/Publication: 2025-02-19 09:50:02 UTC
