@@ -1,6 +1,6 @@
-f30047e9b15de843c1fcd5cbefdb9f46 *DESCRIPTION
+79b4b3b4f1cc5cfab3fdb90a46889607 *DESCRIPTION
 ebca6ccabd1ca060722b87d4a85275cb *NAMESPACE
-9c136321b6d902eedfaebc9dd36da2f8 *NEWS.md
+623abd9fc93d74260fa834e1fc8a4f0d *NEWS.md
 75a3cf25e6b1033328accabb0cdbff33 *R/FilePsInput.R
 53f07facd12f6c9876c5487594598074 *R/FileRepeatedInput.R
 eadae13621582c29da5d0572fadeaa8b *R/FileSurveyInput.R
@@ -18,7 +18,7 @@ b848dd11de71718d85e0dc6cfb89006c *R/forestglm.R
 43d0178ce9c94d6ebb332785d05ba775 *R/jsPropensityGadget.R
 eafc1f7b5d5d790b90794a7fc5917f4d *R/jsRepeatedGadget.R
 60c48bf1e1722196cefce9ed824e2684 *R/jsSurveyGadget.R
-4150e4661809145b09f4e960e00fdb84 *R/kaplan.R
+5711e4928d6763967a810a1d706ce5be *R/kaplan.R
 8ddc7096e9e28615686ee6d7fa753ef2 *R/line.R
 2b2553b6c053934da33002afaafb15e4 *R/regress.R
 5b83aec1d16567968075f3a100f7a555 *R/roc.R
@@ -31,10 +31,10 @@ a8916513cfaefeac24c6d819b967c2a5 *README.md
 b349b93d6a4239a5143c207143a81667 *build/vignette.rds
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule.R
 c16d50eb486ee503eb15a270e1a36db3 *inst/doc/jsmodule.Rmd
-85e0cbaa0a800327eed87e6c5274a762 *inst/doc/jsmodule.html
+e09316031990444ff0a01335925f2fd1 *inst/doc/jsmodule.html
 cdef72ac2e37639bbb3f59f0e16abb92 *inst/doc/jsmodule_subgroup_cmprsk.R
 07b796d268918ecd0d84ab3aa3d980be *inst/doc/jsmodule_subgroup_cmprsk.Rmd
-b6ff0a1cdd4645f95418265b0f64b964 *inst/doc/jsmodule_subgroup_cmprsk.html
+7ab1d4c041c2e921f62b5c507fefe71f *inst/doc/jsmodule_subgroup_cmprsk.html
 9ed3564d72dc695aa1856b10f452f021 *inst/rstudio/addins.dcf
 a896027c0c1da8c86bcc274b9842865b *inst/www/style.css
 1c645c276e98553c360268567867d13a *man/FilePs.Rd
