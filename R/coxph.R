@@ -236,26 +236,20 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
 
 
   output$indep <- renderUI({
-    req(!is.null(input$event_cox))
-    req(!is.null(input$time_cox))
-
-    # Helper function (as in your original code)
-    mklist <- function(varlist, vars) {
-      lapply(
-        varlist,
-        function(x) {
-          inter <- intersect(x, vars)
-          if (length(inter) == 1) {
-            inter <- c(inter, "")
-          }
-          return(inter)
-        }
-      )
+    if (!fix_et) {
+      req(!is.null(input$event_cox))
+      req(!is.null(input$time_cox))
     }
-
-    # Determine the list of independent variables based on fix_et:
+    mklist <- function(varlist, vars) {
+      lapply(varlist, function(x) {
+        inter <- intersect(x, vars)
+        if (length(inter) == 1) {
+          inter <- c(inter, "")
+        }
+        return(inter)
+      })
+    }
     if (fix_et) {
-      # Fixed list: use fixed vectors (vec.event & vec.time) rather than the current inputs.
       if (is.null(design.survey)) {
         indep.cox <- setdiff(names(data()), c(vlist()$except_vars, vec.event, vec.time))
         if (!is.null(id.cluster)) {
@@ -272,16 +266,16 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
           )
         )
       }
-      # When fixed, initially nothing is selected.
-      selected.indep <- if (!is.null(input$indep_cox)) intersect(input$indep_cox, indep.cox) else character(0)
+      prev_sel <- isolate(input$indep_cox)
+      selected.indep <- if (!is.null(prev_sel)) intersect(prev_sel, indep.cox) else character(0)
     } else {
-      # Dynamic list: exclude the current event and time (as in your original code)
+      req(!is.null(input$event_cox))
+      req(!is.null(input$time_cox))
       if (is.null(design.survey)) {
         indep.cox <- setdiff(names(data()), c(vlist()$except_vars, input$event_cox, input$time_cox))
         if (!is.null(id.cluster)) {
           indep.cox <- setdiff(names(data()), c(vlist()$except_vars, input$event_cox, input$time_cox, id.cluster()))
         }
-
         if (default.unires) {
           data.cox <- data()
           if (input$check_rangetime == T) {
@@ -303,17 +297,11 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
               if (is.null(id.cluster)) {
                 forms <- as.formula(paste("survival::Surv(", input$time_cox, ",", input$event_cox, ") ~ ", v, sep = ""))
                 coef <- tryCatch(summary(survival::coxph(forms, data = data.cox, ties = ties.coxph))$coefficients,
-                  error = function(e) {
-                    return(NULL)
-                  }
-                )
+                                 error = function(e) NULL)
               } else {
                 forms <- as.formula(paste("survival::Surv(", input$time_cox, ",", input$event_cox, ") ~ ", v, " + cluster(", id.cluster(), ")", sep = ""))
                 coef <- tryCatch(summary(survival::coxph(forms, data = data.cox, robust = TRUE, ties = ties.coxph))$coefficients,
-                  error = function(e) {
-                    return(NULL)
-                  }
-                )
+                                 error = function(e) NULL)
               }
               sigOK <- ifelse(is.null(coef), FALSE, !all(coef[, "Pr(>|z|)"] > 0.05))
               return(sigOK)
@@ -324,7 +312,7 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
           }
           selected.indep <- indep.cox[varsIni]
         } else {
-          selected.indep <- indep.cox
+          selected.indep <- indep.cox[1]
         }
       } else {
         indep.cox <- setdiff(
@@ -357,10 +345,7 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
             function(v) {
               forms <- as.formula(paste("survival::Surv(", input$time_cox, ",", input$event_cox, ") ~ ", v, sep = ""))
               coef <- tryCatch(summary(survey::svycoxph(forms, design = data.design))$coefficients,
-                error = function(e) {
-                  return(NULL)
-                }
-              )
+                               error = function(e) NULL)
               sigOK <- ifelse(is.null(coef), FALSE, !all(coef[, "Pr(>|z|)"] > 0.05))
               return(sigOK)
             }
@@ -374,13 +359,11 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
         }
       }
     }
-
     tagList(
       selectInput(session$ns("indep_cox"), "Independent variables",
-        choices = mklist(data_varStruct(), indep.cox),
-        multiple = TRUE,
-        selected = selected.indep
-      )
+                  choices = mklist(data_varStruct(), indep.cox),
+                  multiple = TRUE,
+                  selected = selected.indep)
     )
   })
 

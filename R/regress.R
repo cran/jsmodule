@@ -100,12 +100,14 @@ regressModuleUI <- function(id) {
     sliderInput(ns("decimal"), "Digits",
       min = 1, max = 4, value = 2
     ),
-    checkboxInput(ns("regressUI_subcheck"), "Sub-group analysis"),
+    checkboxInput(ns("regressUI_subcheck"), "Sub-group analysis", value = FALSE),
     uiOutput(ns("regressUI_subvar")),
     uiOutput(ns("regressUI_subval")),
-    checkboxInput(ns("step_check"), "Stepwise variable selection"),
+    checkboxInput(ns("step_check"), "Stepwise variable selection",value = FALSE),
     uiOutput(ns("step_direction")),
-    uiOutput(ns("step_scope"))
+    uiOutput(ns("step_scope")),
+    checkboxInput(ns("pcut_univariate"),"filter_pvalue", value = FALSE),
+    uiOutput(ns("pcut_slider"))
   )
 }
 
@@ -124,6 +126,7 @@ regressModuleUI <- function(id) {
 #' @param design.survey reactive survey data. default: NULL
 #' @param default.unires Set default independent variables using univariate analysis, Default: T
 #' @param limit.unires Change to default.unires = F if number of independent variables > limit.unires, Default: 20
+#' @param vec.event event variables as vector for linear regression,  Default: NULL
 #' @return Shiny modulde server for linear regression.
 #' @details Shiny modulde server for linear regression.
 #' @examples
@@ -163,7 +166,7 @@ regressModuleUI <- function(id) {
 #' @importFrom stats glm as.formula model.frame model.matrix step
 #' @importFrom purrr map_lgl
 
-regressModule2 <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, default.unires = T, limit.unires = 20) {
+regressModule2 <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, default.unires = T, limit.unires = 20, vec.event=NULL) {
   ## To remove NOTE.
   level <- val_label <- variable <- NULL
 
@@ -212,22 +215,44 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
     ))
   })
 
+  reactive_pcut <- reactive({
+    input$pcut
+  })
 
 
   output$dep <- renderUI({
-    tagList(
-      selectInput(session$ns("dep_vars"), "Dependent variable",
-        choices = vlist()$conti_list, multiple = F,
-        selected = vlist()$conti_vars[1]
+    if(is.null(vec.event)){
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vlist()$conti_list, multiple = F,
+                    selected = vlist()$conti_vars[1]
+        )
       )
-    )
+    }else{
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = , multiple = F,
+                    selected = vec.event[1]
+        )
+      )
+
+    }
+
   })
 
 
   output$indep <- renderUI({
     req(!is.null(input$dep_vars))
     if (is.null(design.survey)) {
-      vars <- setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars)
+      if (is.null(vec.event)){
+        vars <- setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars)
+        #print(vlist()$conti_list)
+
+      }else{
+        vars <- setdiff(setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars), vec.event)
+      }
+
+
       if (default.unires) {
         varsIni <- sapply(
           vars,
@@ -248,7 +273,14 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
         varsIni <- c(T, rep(F, length(vars) - 1))
       }
     } else {
-      vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
+      #여기를 수정
+      if(is.null(vec.event)){
+        vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster)))
+        print(vlist()$conti_list)
+      }else{
+        vars <- setdiff(setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, names(design.survey()$allprob), names(design.survey()$strata), names(design.survey()$cluster))),vec.event)
+      }
+
       if (default.unires) {
         varsIni <- sapply(
           vars,
@@ -342,6 +374,24 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
     })
   })
 
+  output$pcut_slider <- renderUI({
+    req(input$pcut_univariate)
+    print("Rendering sliderInput!")
+    sliderInput(session$ns("pcut"), "Choose a p-value", min = 0, max = 0.1, value = 0.05, step = 0.001)
+  })
+
+
+  observeEvent(input$pcut_univariate, {
+    if (input$pcut_univariate) {
+      updateCheckboxInput(session, "step_check", value = FALSE)
+    }
+  })
+
+  observeEvent(c(input$step_check), {
+    if (input$step_check) {
+      updateCheckboxInput(session, "pcut_univariate", value = FALSE)
+    }
+  })
 
 
 
@@ -410,7 +460,14 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
 
         res.linear <- stats::step(glm(form, data = data.regress[complete.cases(data.regress[, .SD, .SDcols = c(y, xs)])]), direction = input$step_direction, scope = list(upper = scope[[1]], lower = scope[[2]]))
       }
-      tb.linear <- jstable::glmshow.display(res.linear, decimal = input$decimal)
+      if (input$pcut_univariate==F){
+        tb.linear <- jstable::glmshow.display(res.linear, decimal = input$decimal)
+      }else{
+        #여기를 수정
+
+        tb.linear <- jstable::glmshow.display(res.linear, decimal = input$decimal, pcut.univariate = input$pcut)
+      }
+
       cap.linear <- paste("Linear regression predicting ", label.regress[variable == y, var_label][1], sep = "")
       if (input$regressUI_subcheck == T) {
         for (v in seq_along(input$subvar_regress)) {
@@ -479,7 +536,11 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
         )
       }
 
-      tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal)
+      if(input$pcut_univariate==FALSE){
+        tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal)
+      }else{
+        tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal, pcut.univariate = input$pcut)
+      }
       cap.linear <- paste("Linear regression predicting ", label.regress[variable == y, var_label][1], "- survey data", sep = "")
       if (input$regressUI_subcheck == T) {
         for (v in seq_along(input$subvar_regress)) {
@@ -519,6 +580,7 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
 #' @param design.survey reactive survey data. default: NULL
 #' @param default.unires Set default independent variables using univariate analysis, Default: T
 #' @param limit.unires Change to default.unires = F if number of independent variables > limit.unires, Default: 20
+#' @param vec.event event variables as vector for logistic regression,  Default: NULL
 #' @return Shiny modulde server for logistic regression.
 #' @details Shiny modulde server for logistic regression.
 #' @examples
@@ -559,7 +621,7 @@ regressModule2 <- function(input, output, session, data, data_label, data_varStr
 #' @importFrom purrr map_lgl
 
 
-logisticModule2 <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, default.unires = T, limit.unires = 20) {
+logisticModule2 <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, default.unires = T, limit.unires = 20, vec.event=NULL) {
   ## To remove NOTE.
   level <- val_label <- variable <- NULL
 
@@ -610,19 +672,34 @@ logisticModule2 <- function(input, output, session, data, data_label, data_varSt
     validate(
       need(length(vlist()$factor2_vars) >= 1, "No candidate dependent variable")
     )
-    tagList(
-      selectInput(session$ns("dep_vars"), "Dependent variable",
-        choices = vlist()$factor2_list, multiple = F,
-        selected = vlist()$factor2_vars[1]
+    if(is.null(vec.event)){
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vlist()$factor2_list, multiple = F,
+                    selected = vlist()$factor2_vars[1]
+        )
       )
-    )
+    }else{
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vec.event, multiple = F,
+                    selected = vec.event[1]
+        )
+      )
+    }
+
   })
 
 
   output$indep <- renderUI({
     req(!is.null(input$dep_vars))
     if (is.null(design.survey)) {
-      vars <- setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars)
+      if(is.null(vec.event)){
+        vars <- setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars)
+      }else{
+        vars <- setdiff(setdiff(setdiff(names(data()), vlist()$except_vars), input$dep_vars), vec.event)
+      }
+
       if (default.unires) {
         varsIni <- sapply(
           vars,
@@ -671,6 +748,25 @@ logisticModule2 <- function(input, output, session, data, data_label, data_varSt
       )
     )
   })
+
+  output$pcut_slider <- renderUI({
+    req(input$pcut_univariate)
+    print("Rendering sliderInput!")
+    sliderInput(session$ns("pcut"), "Choose a p-value", min = 0, max = 0.1, value = 0.05, step = 0.001)
+  })
+
+  observeEvent(input$pcut_univariate, {
+    if (input$pcut_univariate) {
+      updateCheckboxInput(session, "step_check", value = FALSE)
+    }
+  })
+
+  observeEvent(c(input$step_check), {
+    if (input$step_check) {
+      updateCheckboxInput(session, "pcut_univariate", value = FALSE)
+    }
+  })
+
 
   observeEvent(input$regressUI_subcheck, {
     output$regressUI_subvar <- renderUI({
@@ -792,8 +888,12 @@ logisticModule2 <- function(input, output, session, data, data_label, data_varSt
 
         res.logistic <- stats::step(glm(form, data = data.logistic[complete.cases(data.logistic[, .SD, .SDcols = c(y, xs)])], family = binomial), direction = input$step_direction, scope = list(upper = scope[[1]], lower = scope[[2]]))
       }
+      if (input$pcut_univariate==FALSE){
+        tb.logistic <- jstable::glmshow.display(res.logistic, decimal = input$decimal)
+      }else{
+        tb.logistic <- jstable::glmshow.display(res.logistic, decimal = input$decimal, pcut.univariate = input$pcut)
+      }
 
-      tb.logistic <- jstable::glmshow.display(res.logistic, decimal = input$decimal)
       cap.logistic <- paste("Logistic regression predicting ", label.regress[variable == y, var_label][1], sep = "")
       if (input$regressUI_subcheck == T) {
         for (v in seq_along(input$subvar_logistic)) {
@@ -856,7 +956,12 @@ logisticModule2 <- function(input, output, session, data, data_label, data_varSt
           direction = input$step_direction, scope = list(upper = scope[[1]], lower = scope[[2]])
         )
       }
-      tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal)
+      if (input$pcut_univariate==FALSE){
+        tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal)
+      }else{
+        tb.svyglm <- jstable::svyregress.display(res.svyglm, decimal = input$decimal, pcut.univariate = input$pcut)
+      }
+
       cap.logistic <- paste("Logistic regression predicting ", label.regress[variable == y, var_label][1], "- survey data", sep = "")
       if (input$regressUI_subcheck == T) {
         for (v in seq_along(input$subvar_logistic)) {

@@ -52,11 +52,13 @@ GEEModuleUI <- function(id) {
     uiOutput(ns("dep")),
     uiOutput(ns("indep")),
     sliderInput(ns("decimal"), "Digits",
-      min = 1, max = 4, value = 2
+                min = 1, max = 4, value = 2
     ),
     checkboxInput(ns("regressUI_subcheck"), "Sub-group analysis"),
     uiOutput(ns("regressUI_subvar")),
-    uiOutput(ns("regressUI_subval"))
+    uiOutput(ns("regressUI_subval")),
+    checkboxInput(ns("pcut_univariate"),"filter_pvalue", value = FALSE),
+    uiOutput(ns("pcut_slider"))
   )
 }
 
@@ -73,6 +75,7 @@ GEEModuleUI <- function(id) {
 #' @param data_varStruct List of variable structure, Default: NULL
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param id.gee reactive repeated measure variable
+#' @param vec.event event variables as vector for gaussian generalized estimating equation(GEE),  Default: NULL
 #' @return Shiny modulde server for gaussian generalized estimating equation(GEE).
 #' @details Shiny modulde server for gaussian generalized estimating equation(GEE) using reactive data.
 #' @examples
@@ -122,7 +125,7 @@ GEEModuleUI <- function(id) {
 #' @importFrom purrr map_lgl
 #' @importFrom geepack geeglm
 
-GEEModuleLinear <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, id.gee) {
+GEEModuleLinear <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, id.gee, vec.event = NULL) {
   ## To remove NOTE.
   level <- val_label <- variable <- NULL
 
@@ -172,22 +175,42 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
     ))
   })
 
+  output$pcut_slider <- renderUI({
+    req(input$pcut_univariate)
+    print("Rendering sliderInput!")
+    sliderInput(session$ns("pcut"), "Choose a p-value", min = 0, max = 0.1, value = 0.05, step = 0.001)
+  })
 
 
   output$dep <- renderUI({
-    tagList(
-      selectInput(session$ns("dep_vars"), "Dependent variable",
-        choices = vlist()$conti_list, multiple = F,
-        selected = vlist()$conti_vars[1]
+    if(is.null(vec.event)){
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vlist()$conti_list, multiple = F,
+                    selected = vlist()$conti_vars[1]
+        )
       )
-    )
+    }else{
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vec.event, multiple = F,
+                    selected = vec.event[1]
+        )
+      )
+    }
+
   })
 
 
   output$indep <- renderUI({
     id <- id.gee()
     req(!is.null(input$dep_vars))
-    vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id))
+    if(is.null(vec.event)){
+      vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id))
+    }else{
+      vars <- setdiff(setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id)), vec.event)
+    }
+
     # varsIni <- sapply(vars,
     #                  function(v){
     #                    forms <- as.formula(paste(input$dep_vars, "~", v))
@@ -199,8 +222,8 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 
     tagList(
       selectInput(session$ns("indep_vars"), "Independent variables",
-        choices = mklist(data_varStruct(), vars), multiple = T,
-        selected = vars[1]
+                  choices = mklist(data_varStruct(), vars), multiple = T,
+                  selected = vars[1]
       )
     )
   })
@@ -217,8 +240,8 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 
       tagList(
         selectInput(session$ns("subvar_regress"), "Sub-group variables",
-          choices = var_subgroup_list, multiple = T,
-          selected = var_subgroup[1]
+                    choices = var_subgroup_list, multiple = T,
+                    selected = var_subgroup[1]
         )
       )
     })
@@ -232,14 +255,14 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
       for (v in seq_along(input$subvar_regress)) {
         if (input$subvar_regress[[v]] %in% vlist()$factor_vars) {
           outUI[[v]] <- selectInput(session$ns(paste0("subval_regress", v)), paste0("Sub-group value: ", input$subvar_regress[[v]]),
-            choices = data_label()[variable == input$subvar_regress[[v]], level], multiple = T,
-            selected = data_label()[variable == input$subvar_regress[[v]], level][1]
+                                    choices = data_label()[variable == input$subvar_regress[[v]], level], multiple = T,
+                                    selected = data_label()[variable == input$subvar_regress[[v]], level][1]
           )
         } else {
           val <- stats::quantile(data()[[input$subvar_regress[[v]]]], na.rm = T)
           outUI[[v]] <- sliderInput(session$ns(paste0("subval_regress", v)), paste0("Sub-group range: ", input$subvar_regress[[v]]),
-            min = val[1], max = val[5],
-            value = c(val[2], val[4])
+                                    min = val[1], max = val[5],
+                                    value = c(val[2], val[4])
           )
         }
       }
@@ -295,7 +318,12 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 
     nomiss <- stats::complete.cases(data.regress[, c(y, xs), with = F])
     res.gee <- geepack::geeglm(form, data = data.regress[nomiss, ], family = "gaussian", id = get(idgee_Plz_Noduplicate), corstr = "exchangeable")
-    info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
+    if(input$pcut_univariate==FALSE){
+      info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
+    }else{
+      info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal, pcut.univariate = input$pcut)
+    }
+
     info.gee$caption <- gsub("idgee_Plz_Noduplicate", idgee_Plz_Noduplicate, info.gee$caption)
     ltb.gee <- jstable::LabeljsGeeglm(info.gee, ref = label.regress)
     out.tb <- rbind(ltb.gee$table, ltb.gee$metric)
@@ -330,6 +358,7 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 #' @param data_varStruct List of variable structure, Default: NULL
 #' @param nfactor.limit nlevels limit in factor variable, Default: 10
 #' @param id.gee reactive repeated measure variable
+#' @param vec.event event variables as vector for binomial gaussian generalized estimating equation(GEE),  Default: NULL
 #' @return Shiny modulde server for binomial gaussian generalized estimating equation(GEE).
 #' @details Shiny modulde server for binomial gaussian generalized estimating equation(GEE) using reactive data.
 #' @examples
@@ -380,7 +409,7 @@ GEEModuleLinear <- function(input, output, session, data, data_label, data_varSt
 #' @importFrom purrr map_lgl
 #' @importFrom geepack geeglm
 
-GEEModuleLogistic <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, id.gee) {
+GEEModuleLogistic <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, id.gee, vec.event=NULL) {
   ## To remove NOTE.
   level <- val_label <- variable <- NULL
 
@@ -431,25 +460,45 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
     ))
   })
 
+  output$pcut_slider <- renderUI({
+    req(input$pcut_univariate)
+    print("Rendering sliderInput!")
+    sliderInput(session$ns("pcut"), "Choose a p-value", min = 0, max = 0.1, value = 0.05, step = 0.001)
+  })
 
 
   output$dep <- renderUI({
     validate(
       need(length(vlist()$factor_01vars) >= 1, "No candidate dependent variable coded as 0, 1")
     )
-    tagList(
-      selectInput(session$ns("dep_vars"), "Dependent variable",
-        choices = vlist()$factor_01_list, multiple = F,
-        selected = vlist()$factor_01vars[1]
+    if(is.null(vec.event)){
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vlist()$factor_01_list, multiple = F,
+                    selected = vlist()$factor_01vars[1]
+        )
       )
-    )
+    }else{
+      tagList(
+        selectInput(session$ns("dep_vars"), "Dependent variable",
+                    choices = vec.event, multiple = F,
+                    selected = vec.event[1]
+        )
+      )
+    }
+
   })
 
 
   output$indep <- renderUI({
     id <- id.gee()
     req(!is.null(input$dep_vars))
-    vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id))
+    if(is.null(vec.event)){
+      vars <- setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id))
+    }else{
+      vars <- setdiff(setdiff(setdiff(names(data()), vlist()$except_vars), c(input$dep_vars, id)), vec.event)
+    }
+
     # varsIni <- sapply(vars,
     #                  function(v){
     #                    forms <- as.formula(paste(input$dep_vars, "~", v))
@@ -461,8 +510,8 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
 
     tagList(
       selectInput(session$ns("indep_vars"), "Independent variables",
-        choices = mklist(data_varStruct(), vars), multiple = T,
-        selected = vars[1]
+                  choices = mklist(data_varStruct(), vars), multiple = T,
+                  selected = vars[1]
       )
     )
   })
@@ -478,8 +527,8 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
 
       tagList(
         selectInput(session$ns("subvar_regress"), "Sub-group variables",
-          choices = var_subgroup_list, multiple = T,
-          selected = var_subgroup[1]
+                    choices = var_subgroup_list, multiple = T,
+                    selected = var_subgroup[1]
         )
       )
     })
@@ -493,14 +542,14 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
       for (v in seq_along(input$subvar_regress)) {
         if (input$subvar_regress[[v]] %in% vlist()$factor_vars) {
           outUI[[v]] <- selectInput(session$ns(paste0("subval_regress", v)), paste0("Sub-group value: ", input$subvar_regress[[v]]),
-            choices = data_label()[variable == input$subvar_regress[[v]], level], multiple = T,
-            selected = data_label()[variable == input$subvar_regress[[v]], level][1]
+                                    choices = data_label()[variable == input$subvar_regress[[v]], level], multiple = T,
+                                    selected = data_label()[variable == input$subvar_regress[[v]], level][1]
           )
         } else {
           val <- stats::quantile(data()[[input$subvar_regress[[v]]]], na.rm = T)
           outUI[[v]] <- sliderInput(session$ns(paste0("subval_regress", v)), paste0("Sub-group range: ", input$subvar_regress[[v]]),
-            min = val[1], max = val[5],
-            value = c(val[2], val[4])
+                                    min = val[1], max = val[5],
+                                    value = c(val[2], val[4])
           )
         }
       }
@@ -560,7 +609,11 @@ GEEModuleLogistic <- function(input, output, session, data, data_label, data_var
 
     nomiss <- stats::complete.cases(data.logistic[, c(y, xs), with = F])
     res.gee <- geepack::geeglm(form, data = data.logistic[nomiss, ], family = "binomial", id = get(idgee_Plz_Noduplicate), corstr = "exchangeable")
-    info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
+    if(input$pcut_univariate==FALSE){
+      info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal)
+    }else{
+      info.gee <- jstable::geeglm.display(res.gee, decimal = input$decimal, input$pcut)
+    }
     info.gee$caption <- gsub("idgee_Plz_Noduplicate", idgee_Plz_Noduplicate, info.gee$caption)
     ltb.gee <- jstable::LabeljsGeeglm(info.gee, ref = label.regress)
     out.tb <- rbind(ltb.gee$table, ltb.gee$metric)
