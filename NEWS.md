@@ -1,3 +1,11 @@
+# jsmodule 1.6.11
+- Update: simplified file input functions.
+- Update: Modified the Fine-Gray module to use the `id` argument.
+
+# jsmodule 1.6.10
+- Fix: default cut-off value in `rocModule` and `rocModule2` when there is only one independent variable.
+- Fix: Kaplan-Meier plots now work when "Time by" is below 1.
+
 # jsmodule 1.6.9
 ## Update
 - Added Brier and AUC calculation to timeroc functionality; fixed bugs.

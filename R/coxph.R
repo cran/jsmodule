@@ -93,7 +93,7 @@ coxUI <- function(id) {
 
 coxModule <- function(input, output, session, data, data_label, data_varStruct = NULL, nfactor.limit = 10, design.survey = NULL, default.unires = T, limit.unires = 20, id.cluster = NULL, ties.coxph = "efron", vec.event = NULL, vec.time = NULL) {
   ## To remove NOTE.
-  data.cox.step <- level <- val_label <- variable <- NULL
+  id_finegray <- data.cox.step <- level <- val_label <- variable <- NULL
   fix_et <- !is.null(vec.event) && !is.null(vec.time) && (length(vec.event) == length(vec.time))
   if (is.null(data_varStruct)) {
     data_varStruct <- reactive(list(variable = names(data())))
@@ -505,10 +505,11 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
       data.cox$cmpp_time <- with(data.cox, ifelse(data.cox[[input$event_cox]] == 0, data.cox[[input$cmp_time_cox]], data.cox[[input$time_cox]]))
       data.cox$cmpp_event <- with(data.cox, ifelse(data.cox[[input$event_cox]] == 0, 2 * data.cox[[input$cmp_event_cox]], 1))
       data.cox$cmpp_event <- factor(data.cox$cmpp_event)
-      fg_data <- survival::finegray(formula = survival::Surv(cmpp_time, cmpp_event) ~ ., data = data.cox)
+      data.cox$id_finegray <- 1:nrow(data.cox)
+      fg_data <- survival::finegray(formula = survival::Surv(cmpp_time, cmpp_event) ~ ., data = data.cox, id = id_finegray)
       data.cox <- data.table::data.table(fg_data)
-      cc <- substitute(survival::coxph(.form, data = data.cox, weight = fgwt, model = T, ties = .ties), list(.form = form.cox(), .ties = ties.coxph))
-    }
+      cc <- substitute(survival::coxph(.form, data = data.cox, weight = fgwt, model = T, ties = .ties, id = id_finegray), list(.form = form.cox(), .ties = ties.coxph))
+      }
     mf <- model.frame(form.cox(), data.cox)
     validate(
       need(nrow(mf) > 0, paste("No complete data due to missingness. Please remove some variables from independent variables"))
@@ -524,6 +525,7 @@ coxModule <- function(input, output, session, data, data_label, data_varStruct =
         cc <- substitute(survival::coxph(.form, data = data.cox, model = T, robust = T, ties = .ties), list(.form = form.cox(), .ties = ties.coxph))
       }
       res.cox <- eval(cc)
+
       if (input$step_check == T) {
         validate(
           need(!is.null(input$step_upper), "Upper limits can't be NULL, please select at least 1 variable."),

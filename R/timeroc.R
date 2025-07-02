@@ -89,7 +89,7 @@ timerocUI <- function(id) {
 
 timeROChelper <- function(var.event, var.time, vars.ind, t, data, design.survey = NULL, id.cluster = NULL) {
   data[[var.event]] <- as.numeric(as.vector(data[[var.event]]))
-  form <- as.formula(paste0("Surv(", var.time, ",", var.event, ") ~ ", paste(vars.ind, collapse = "+")))
+  form <- as.formula(paste0("survival::Surv(", var.time, ",", var.event, ") ~ ", paste(vars.ind, collapse = "+")))
 
   if (is.null(design.survey)) {
     if (!is.null(id.cluster)) {
@@ -292,7 +292,6 @@ survIDINRI_helper <- function(var.event, var.time, list.vars.ind, t, data, dec.a
 #' @return shiny module server for time-dependent roc analysis
 #' @details shiny module server for time-dependent roc analysis
 #' @examples
-#'
 #'   library(shiny)
 #'   library(DT)
 #'   library(data.table)
@@ -313,7 +312,7 @@ survIDINRI_helper <- function(var.event, var.time, list.vars.ind, t, data, dec.a
 #'
 #'   server <- function(input, output, session) {
 #'     data <- reactive({
-#'       dt_data <- as.data.table(pbc) # Ensure 'pbc' dataset is available, e.g., from `survival` package
+#'       dt_data <- as.data.table(pbc)
 #'
 #'       factor_vars <- names(dt_data)[sapply(dt_data, function(x){length(table(x))}) <= 6]
 #'       dt_data[, (factor_vars) := lapply(.SD, factor), .SDcols = factor_vars]
@@ -359,8 +358,7 @@ survIDINRI_helper <- function(var.event, var.time, list.vars.ind, t, data, dec.a
 #'
 #'   }
 #'
-#'   shinyApp(ui, server)
-#' }
+#'
 #' @seealso
 #'  \code{\link[stats]{quantile}}
 #'  \code{\link[data.table]{setkey}}
@@ -750,7 +748,6 @@ timerocModule <- function(input, output, session, data, data_label,
 #' @return shiny module server for time dependent roc analysis- input number of model as integer
 #' @details shiny module server for time dependent roc analysis- input number of model as integer
 #' @examples
-#'
 #'   library(shiny)
 #'   library(DT)
 #'   library(data.table)
@@ -771,7 +768,7 @@ timerocModule <- function(input, output, session, data, data_label,
 #'
 #'   server <- function(input, output, session) {
 #'     data <- reactive({
-#'       dt_data <- as.data.table(pbc) # Ensure 'pbc' dataset is available, e.g., from `survival` package
+#'       dt_data <- as.data.table(pbc)
 #'
 #'       factor_vars <- names(dt_data)[sapply(dt_data, function(x){length(table(x))}) <= 6]
 #'       dt_data[, (factor_vars) := lapply(.SD, factor), .SDcols = factor_vars]
@@ -817,8 +814,6 @@ timerocModule <- function(input, output, session, data, data_label,
 #'
 #'   }
 #'
-#'   shinyApp(ui, server)
-#' }
 #'
 #'
 #' @seealso
