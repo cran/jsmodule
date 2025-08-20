@@ -1,3 +1,30 @@
+# jsmodule 1.6.14
+## Update
+- Added a checkbox to select the style of p-value: `exact number` or `stars`.
+## Bugfix
+- Fixed an error for the `boxplot`.
+
+
+# jsmodule 1.6.13
+## Update
+- Added an option to the `Kaplan-Meier module` to show censored counts in the numbers-at-risk table. When enabled, default label is automatically extended from "Numbers at risk" to "Numbers at risk (number censored)".
+- Added AUC and Brier Score metrics for time-dependent `ROC` analysis
+- `Harrell’s C-index` now updates dynamically based on the selected analysis time.
+## Bugfix
+- Fixed an error when selecting factor (categorical) predictors in `ROC` analysis.
+- Fixed an error for `geeglm` caused by unsorted cluster id (now sorted before fitting).
+
+
+# jsmodule 1.6.12
+## Update
+- refactor ROC time dependent table function (remove for statement)
+- add new column in ROC time dependent table (CI & p-value difference of AUC & Brier)
+## Bugfix
+- "survive"" library dependent issue in ROC time dependent feat
+- remove error message when add new model in ROC time dependent feat
+- fix remove model button that remain removed label issue in ROC time dependent feat
+
+
 # jsmodule 1.6.11
 - Update: simplified file input functions.
 - Update: Modified the Fine-Gray module to use the `id` argument.
