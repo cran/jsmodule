@@ -1,6 +1,11 @@
+# jsmodule 1.6.15
+## Refactor
+- Introduced `DataManager` R6 class to streamline data loading and preprocessing across Shiny modules, reducing code duplication.
+
 # jsmodule 1.6.14
 ## Update
 - Added a checkbox to select the style of p-value: `exact number` or `stars`.
+- Added a optionUI feature in scatter plot including color pallette feat.
 ## Bugfix
 - Fixed an error for the `boxplot`.
 
