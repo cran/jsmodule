@@ -1,3 +1,26 @@
+# jsmodule 2.0.1
+## Update
+- Generalized all variable names in AI Assistant prompts to use placeholder patterns (`_var` suffix), making code examples applicable to any dataset instead of being tied to specific example data (e.g., `age`, `sex`, `time`, `status`, `rx`).
+- Added `# IMPORTANT: Replace with your actual variable names` comments to all code examples in AI prompts to guide users in adapting generated code to their data.
+- Improved AI Assistant prompt clarity by replacing dataset-specific examples with generic placeholders across all statistical analysis sections.
+
+## Bugfix
+- Fixed AI Assistant result handling to properly support mixed result types (tables, plots, and flextables) returned from analysis code.
+
+# jsmodule 2.0.0
+## New Features
+- Introduced the `jsmodule AI Assistant`, which connects to Anthropic, OpenAI, and Google LLMs so you can generate analyses, scripts, and export-ready visuals without leaving the app.
+- The assistant automatically leverages context captured in `Data Manager`, enabling follow-up questions that reference earlier tables or plots.
+- Prompts never include row-level data, and the execution sandbox blocks dangerous calls, preventing direct data exposure and prompt-injection attacks.
+
+## Update
+- Unified AI configuration panel with provider picker, API-key validation, and automatic model discovery for each provider.
+- Model-aware code generation with integrated editing, execution, and copy-to-clipboard shortcuts plus toast confirmations.
+- Conversation history with live rendering of user/assistant messages, downloadable transcripts, and per-session token/cost tracking.
+- Result viewers for tables, plots, and flextables, including export options to PPTX, Word, Excel, and TXT.
+- Contextual helper actions (error-to-prompt conversion, code summary, save chat) to streamline iterative AI-assisted analysis.
+
+
 # jsmodule 1.6.15
 ## Refactor
 - Introduced `DataManager` R6 class to streamline data loading and preprocessing across Shiny modules, reducing code duplication.

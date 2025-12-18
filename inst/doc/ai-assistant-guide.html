@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Jaewoong Heo" />
+
+<meta name="date" content="2025-12-18" />
+
+<title>AI Assistant Module Guide</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">AI Assistant Module Guide</h1>
+<h4 class="author">Jaewoong Heo</h4>
+<h4 class="date">2025-12-18</h4>
+
+
+
+<div id="ai-assistant-module" class="section level1">
+<h1>AI Assistant Module</h1>
+<p>AI-powered statistical analysis code generation module for jsmodule
+package.</p>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>The AI Assistant module provides an interactive chat interface that
+generates R code for statistical analysis. It integrates seamlessly with
+jsmodule’s gadgets and supports multiple AI providers (Anthropic Claude,
+OpenAI GPT, Google Gemini).</p>
+</div>
+<div id="quick-start" class="section level2">
+<h2>Quick Start</h2>
+<div id="api-key-setup" class="section level3">
+<h3>1. API Key Setup</h3>
+<p>Add your API key to <code>.Renviron</code> file:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Open .Renviron file</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">edit_r_environ</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># Add one of the following lines:</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># ANTHROPIC_API_KEY=your_key_here</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># OPENAI_API_KEY=your_key_here</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># GOOGLE_API_KEY=your_key_here</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># Save and restart R session</span></span></code></pre></div>
+</div>
+<div id="basic-usage" class="section level3">
+<h3>2. Basic Usage</h3>
+<div id="option-a-use-with-jsbasicgadget" class="section level4">
+<h4>Option A: Use with jsBasicGadget</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(jsmodule)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Launch gadget with AI Assistant included</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">jsBasicGadget</span>()</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># Navigate to &quot;AI Assistant&quot; tab</span></span></code></pre></div>
+</div>
+<div id="option-b-standalone-shiny-app" class="section level4">
+<h4>Option B: Standalone Shiny App</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(shiny)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">library</span>(jsmodule)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>ui <span class="ot">&lt;-</span> <span class="fu">fluidPage</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="fu">titlePanel</span>(<span class="st">&quot;AI Statistical Assistant&quot;</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="fu">aiAssistantUI</span>(<span class="st">&quot;ai&quot;</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">reactive</span>(colon)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  data.label <span class="ot">&lt;-</span> <span class="fu">reactive</span>(jstable<span class="sc">::</span><span class="fu">mk.lev</span>(colon))</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>    <span class="at">data =</span> data,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    <span class="at">data_label =</span> data.label</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  )</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>}</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="fu">shinyApp</span>(ui, server)</span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="features" class="section level2">
+<h2>Features</h2>
+<div id="code-generation" class="section level3">
+<h3>Code Generation</h3>
+<ul>
+<li>Statistical analysis code (regression, survival analysis,
+descriptive statistics)</li>
+<li>Visualization code (ggplot2, jskm, forestplot)</li>
+<li>Table generation (jstable, DT)</li>
+<li>Follows jsmodule conventions and best practices</li>
+</ul>
+</div>
+<div id="multiple-ai-providers" class="section level3">
+<h3>Multiple AI Providers</h3>
+<ul>
+<li><strong>Anthropic Claude</strong> (default): claude-3-7-sonnet,
+claude-3-5-sonnet, claude-3-opus</li>
+<li><strong>OpenAI GPT</strong>: gpt-4o, gpt-4-turbo, gpt-3.5-turbo</li>
+<li><strong>Google Gemini</strong>: gemini-2.0-flash-exp,
+gemini-1.5-pro, gemini-1.5-flash</li>
+</ul>
+</div>
+<div id="export-options" class="section level3">
+<h3>Export Options</h3>
+<ul>
+<li><strong>Word (.docx)</strong>: Tables with formatted layout</li>
+<li><strong>PowerPoint (.pptx)</strong>: Plots as editable vector
+graphics</li>
+<li><strong>Excel (.xlsx)</strong>: Tables with data preservation</li>
+<li><strong>R Script (.R)</strong>: Complete reproducible code</li>
+</ul>
+</div>
+<div id="safety-features" class="section level3">
+<h3>Safety Features</h3>
+<ul>
+<li>Sandboxed code execution (only allowed packages)</li>
+<li>Pre-execution code review and editing</li>
+<li>Error handling with AI-assisted fixes</li>
+<li>No file system or network access</li>
+</ul>
+</div>
+</div>
+<div id="important-notes" class="section level2">
+<h2>Important Notes</h2>
+<div id="data-access" class="section level3">
+<h3>Data Access</h3>
+<ul>
+<li>The AI can only access data provided through the <code>data</code>
+parameter</li>
+<li>Data is referred to as <code>out</code> in generated code</li>
+<li>File upload data is automatically reactive</li>
+</ul>
+</div>
+<div id="allowed-packages" class="section level3">
+<h3>Allowed Packages</h3>
+<p>Generated code can only use these packages:</p>
+<pre><code>jstable, jskm, jsmodule, survival, ggplot2, ggpubr,
+pROC, data.table, DT, gridExtra, GGally, forestploter,
+MatchIt, timeROC</code></pre>
+</div>
+<div id="variable-structure" class="section level3">
+<h3>Variable Structure</h3>
+<p>The module automatically generates variable structure information: -
+Factor variables - Numeric variables - Custom structures (if provided
+via <code>data_varStruct</code> parameter)</p>
+</div>
+<div id="api-key-resolution-order" class="section level3">
+<h3>API Key Resolution Order</h3>
+<ol style="list-style-type: decimal">
+<li>Explicit <code>api_key</code> argument in
+<code>callModule()</code></li>
+<li>UI input (if <code>show_api_config = TRUE</code>)</li>
+<li>Environment variables (<code>.Renviron</code> file)</li>
+</ol>
+</div>
+<div id="api-configuration-modes" class="section level3">
+<h3>API Configuration Modes</h3>
+<p>The <code>show_api_config</code> parameter controls how API keys are
+managed:</p>
+<div id="show_api_config-true-default" class="section level4">
+<h4><code>show_api_config = TRUE</code> (Default)</h4>
+<ul>
+<li><strong>Use Case</strong>: Development, personal use, or when users
+provide their own API keys</li>
+<li><strong>Behavior</strong>:
+<ul>
+<li>Shows Settings panel in the UI</li>
+<li>Users can select AI provider and model</li>
+<li>Users can enter API key directly in the interface</li>
+<li>API key input takes precedence over <code>.Renviron</code> file</li>
+</ul></li>
+<li><strong>Security Note</strong>: API keys entered in UI are only
+stored in browser memory and never saved to disk</li>
+<li><strong>Recommendation</strong>: Suitable for local development and
+single-user applications</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Development mode - users can configure in UI</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">aiAssistantUI</span>(<span class="st">&quot;ai&quot;</span>, <span class="at">show_api_config =</span> <span class="cn">TRUE</span>)  <span class="co"># Default</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">data_label =</span> data.label,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">show_api_config =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="show_api_config-false" class="section level4">
+<h4><code>show_api_config = FALSE</code></h4>
+<ul>
+<li><strong>Use Case</strong>: Production deployment, shared
+applications, or pre-configured environments</li>
+<li><strong>Behavior</strong>:
+<ul>
+<li>Hides Settings panel completely</li>
+<li>Only uses <code>.Renviron</code> file or explicit
+<code>api_key</code> argument</li>
+<li>No UI elements for API configuration</li>
+</ul></li>
+<li><strong>Security Note</strong>: Prevents users from seeing or
+modifying API keys</li>
+<li><strong>Recommendation</strong>: Mandatory for production
+deployments with shared API keys</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Production mode - API key from .Renviron only</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">aiAssistantUI</span>(<span class="st">&quot;ai&quot;</span>, <span class="at">show_api_config =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">data_label =</span> data.label,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">show_api_config =</span> <span class="cn">FALSE</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="advanced-usage" class="section level2">
+<h2>Advanced Usage</h2>
+<div id="custom-variable-structure" class="section level3">
+<h3>Custom Variable Structure</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">reactive</span>(lung)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  data.label <span class="ot">&lt;-</span> <span class="fu">reactive</span>(jstable<span class="sc">::</span><span class="fu">mk.lev</span>(lung))</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="co"># Define custom variable roles</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  var_struct <span class="ot">&lt;-</span> <span class="fu">reactive</span>({</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="fu">list</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>      <span class="at">variable =</span> <span class="fu">names</span>(lung),</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>      <span class="at">Base =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;sex&quot;</span>, <span class="st">&quot;ph.ecog&quot;</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>      <span class="at">Event =</span> <span class="st">&quot;status&quot;</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>      <span class="at">Time =</span> <span class="st">&quot;time&quot;</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>    )</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  })</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>    <span class="at">data =</span> data,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    <span class="at">data_label =</span> data.label,</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>    <span class="at">data_varStruct =</span> var_struct</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  )</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="analysis-context" class="section level3">
+<h3>Analysis Context</h3>
+<p>Provide background information to improve AI responses:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">data_label =</span> data.label,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">analysis_context =</span> <span class="fu">reactive</span>({</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="st">&quot;NCCTG lung cancer trial data.</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="st">     Primary outcome: time to death (status/time).</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="st">     Focus on performance status (ph.ecog) as predictor.&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  })</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="production-deployment" class="section level3">
+<h3>Production Deployment</h3>
+<p>Hide API configuration UI for production:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>ui <span class="ot">&lt;-</span> <span class="fu">fluidPage</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">aiAssistantUI</span>(<span class="st">&quot;ai&quot;</span>, <span class="at">show_api_config =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>server <span class="ot">&lt;-</span> <span class="cf">function</span>(input, output, session) {</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="fu">callModule</span>(aiAssistant, <span class="st">&quot;ai&quot;</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>    <span class="at">data =</span> data,</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    <span class="at">data_label =</span> data.label,</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    <span class="at">show_api_config =</span> <span class="cn">FALSE</span>  <span class="co"># Use only .Renviron</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  )</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="troubleshooting" class="section level2">
+<h2>Troubleshooting</h2>
+<div id="api-key-not-found" class="section level3">
+<h3>API Key Not Found</h3>
+<p><strong>Problem</strong>: “API key not configured” error</p>
+<p><strong>Solution</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>Check <code>.Renviron</code> file has correct variable name</li>
+<li>Restart R session after editing <code>.Renviron</code></li>
+<li>Verify key is valid (test in terminal:
+<code>Sys.getenv(&quot;ANTHROPIC_API_KEY&quot;)</code>)</li>
+</ol>
+</div>
+<div id="code-execution-errors" class="section level3">
+<h3>Code Execution Errors</h3>
+<p><strong>Problem</strong>: Generated code fails to execute</p>
+<p><strong>Solution</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>Click “Ask AI to Fix” button for automatic correction</li>
+<li>Review code in editor before execution</li>
+<li>Check data has required variables</li>
+<li>Verify packages are installed</li>
+</ol>
+</div>
+<div id="summary-results-too-fragmented" class="section level3">
+<h3>Summary Results Too Fragmented</h3>
+<p><strong>Problem</strong>: <code>summary()</code> results split into
+many pieces</p>
+<p><strong>Solution</strong>: This is now fixed in the latest version.
+Update jsmodule package.</p>
+</div>
+<div id="text-output-shows-escape-sequences" class="section level3">
+<h3>Text Output Shows Escape Sequences</h3>
+<p><strong>Problem</strong>: <code>\n</code> visible instead of line
+breaks</p>
+<p><strong>Solution</strong>: This is now fixed in the latest version.
+Update jsmodule package.</p>
+</div>
+</div>
+<div id="best-practices" class="section level2">
+<h2>Best Practices</h2>
+<div id="be-specific-in-questions" class="section level3">
+<h3>1. Be Specific in Questions</h3>
+<p>❌ Bad: “analyze this data”</p>
+<p>✅ Good: “perform linear regression with wt.loss as outcome and age,
+sex, ph.ecog as predictors”</p>
+</div>
+<div id="review-generated-code" class="section level3">
+<h3>2. Review Generated Code</h3>
+<p>Always review code in the editor before clicking “Run Code”</p>
+</div>
+<div id="provide-context" class="section level3">
+<h3>3. Provide Context</h3>
+<p>Use <code>analysis_context</code> parameter to give AI background
+about your data</p>
+</div>
+<div id="use-appropriate-model" class="section level3">
+<h3>4. Use Appropriate Model</h3>
+<ul>
+<li>Use faster models (Sonnet, GPT-4o) for simple tasks</li>
+<li>Use advanced models (Opus, GPT-4) for complex analyses</li>
+</ul>
+</div>
+<div id="iterative-refinement" class="section level3">
+<h3>5. Iterative Refinement</h3>
+<p>Ask follow-up questions to refine code rather than starting over</p>
+</div>
+</div>
+<div id="limitations" class="section level2">
+<h2>Limitations</h2>
+<ol style="list-style-type: decimal">
+<li><strong>No External Data Access</strong>: Cannot read files or
+connect to databases</li>
+<li><strong>Limited Package Scope</strong>: Only allowed packages can be
+used</li>
+<li><strong>Context Window</strong>: Very long conversations may need to
+be cleared</li>
+<li><strong>Visualization Preview</strong>: Some complex plots may not
+render immediately</li>
+<li><strong>Statistical Expertise</strong>: AI provides code, not
+statistical consulting</li>
+</ol>
+</div>
+<div id="examples" class="section level2">
+<h2>Examples</h2>
+<div id="example-1-descriptive-statistics" class="section level3">
+<h3>Example 1: Descriptive Statistics</h3>
+<pre><code>Q: &quot;Create a Table 1 comparing baseline characteristics by treatment group (rx)&quot;</code></pre>
+</div>
+<div id="example-2-survival-analysis" class="section level3">
+<h3>Example 2: Survival Analysis</h3>
+<pre><code>Q: &quot;Perform Cox regression with time and status as survival outcome,
+    adjusting for age, sex, and ph.ecog&quot;</code></pre>
+</div>
+<div id="example-3-visualization" class="section level3">
+<h3>Example 3: Visualization</h3>
+<pre><code>Q: &quot;Create a Kaplan-Meier plot stratified by treatment group with risk table&quot;</code></pre>
+</div>
+<div id="example-4-model-diagnostics" class="section level3">
+<h3>Example 4: Model Diagnostics</h3>
+<pre><code>Q: &quot;Check VIF for multicollinearity in the linear model with wt.loss ~ age + sex + ph.ecog&quot;</code></pre>
+</div>
+</div>
+<div id="security-considerations" class="section level2">
+<h2>Security Considerations</h2>
+<div id="code-execution-security" class="section level3">
+<h3>Code Execution Security</h3>
+<div id="environment-aware-execution-development-vs-production" class="section level4">
+<h4>Environment-Aware Execution (Development vs Production)</h4>
+<p>The AI Assistant module implements <strong>environment-aware code
+execution</strong> to balance security and usability:</p>
+<p><strong>Development Mode</strong> (Default): - Uses standard
+<code>eval()</code> for code execution - Easier debugging and
+development - All console output visible - Suitable for local, trusted
+environments</p>
+<p><strong>Production Mode</strong>: - Uses
+<code>RAppArmor::eval.secure()</code> for sandboxed execution (Linux
+only) - Enhanced security with resource limits: - 1GB RAM limit - 1MB
+file size limit - 10 second timeout - No new process creation - Prevents
+system command execution - Required for public deployments</p>
+<p><strong>Environment Detection</strong>: The module automatically
+detects production environments using:</p>
+<ol style="list-style-type: decimal">
+<li><code>DEPLOYMENT_ENV</code> environment variable
+(<code>production</code> or <code>development</code>)</li>
+<li>shinyapps.io deployment detection</li>
+<li>RStudio Connect detection</li>
+<li><code>.production</code> marker file</li>
+</ol>
+<p><strong>Setting Deployment Mode</strong>:</p>
+<p>For local development (default):</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># No setup needed - defaults to development mode</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co"># Or explicitly set in .Renviron:</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co"># DEPLOYMENT_ENV=development</span></span></code></pre></div>
+<p>For production deployment:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Add to .Renviron file:</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co"># DEPLOYMENT_ENV=production</span></span></code></pre></div>
+<p>Or create a marker file:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># In your app directory</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">touch</span> .production</span></code></pre></div>
+<p><strong>Linux Server Setup</strong> (for RAppArmor):</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Install AppArmor</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">sudo</span> apt-get install apparmor apparmor-utils libapparmor-dev</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co"># Install R package</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">&quot;install.packages(&#39;RAppArmor&#39;)&quot;</span></span></code></pre></div>
+<p><strong>Platform Support</strong>:</p>
+<ul>
+<li>✅ <strong>Linux</strong>: Full RAppArmor sandboxing available</li>
+<li>⚠️ <strong>macOS/Windows</strong>: Falls back to standard eval with
+warning in production mode</li>
+<li>Recommendation: Deploy on Linux servers for maximum security</li>
+</ul>
+</div>
+<div id="basic-security-features" class="section level4">
+<h4>Basic Security Features</h4>
+<ul>
+<li><strong>Package Whitelist</strong>: Only approved packages
+allowed</li>
+<li><strong>Pre-execution Review</strong>: Code can be edited before
+execution</li>
+<li><strong>Error Handling</strong>: Safe error messages without system
+information</li>
+</ul>
+</div>
+</div>
+<div id="api-key-security" class="section level3">
+<h3>API Key Security</h3>
+<p><strong>⚠️ IMPORTANT: API Key Handling</strong></p>
+<p><strong>How API Keys are Used</strong>:</p>
+<ul>
+<li>API keys are read from environment variables
+(<code>.Renviron</code>) or UI input</li>
+<li>When entered in UI, keys exist only in the current R session
+memory</li>
+<li>API calls are made using the <code>httr</code> package to AI
+provider APIs</li>
+</ul>
+<p><strong>This is Open Source</strong>:</p>
+<ul>
+<li>All code is publicly available and auditable at <a href="https://github.com/jinseob2kim/jsmodule" class="uri">https://github.com/jinseob2kim/jsmodule</a></li>
+<li>No hidden API key storage or transmission</li>
+<li>You can review the code yourself</li>
+</ul>
+<p>✅ <strong>What this module does NOT do with API keys</strong>:</p>
+<ul>
+<li>Never saves them anywhere</li>
+<li>Never logs them</li>
+<li>Never transmits them except to the AI provider</li>
+</ul>
+<p>✅ <strong>What IS sent to AI providers</strong>:</p>
+<ul>
+<li>Your prompts and questions</li>
+<li>Data structure information (variable names, types, sample
+statistics)</li>
+<li>Previous conversation history</li>
+<li>Generated code (for error fixing)</li>
+</ul>
+<p><strong>NOT sent</strong>:</p>
+<ul>
+<li>Raw data values (unless explicitly included in your question)</li>
+<li>File system information</li>
+</ul>
+<div id="best-practices-by-deployment-type" class="section level4">
+<h4>Best Practices by Deployment Type</h4>
+<p><strong>For Personal/Desktop Use</strong> (Recommended):</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Store API key in .Renviron (user&#39;s home directory)</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co"># This keeps the key private to your user account</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co"># ANTHROPIC_API_KEY=your_key_here</span></span></code></pre></div>
+<p><strong>For Team/Shared Use</strong>:</p>
+<ul>
+<li>Each team member should use their own API key in
+<code>.Renviron</code></li>
+<li>Set <code>show_api_config = TRUE</code> to allow individual
+configuration</li>
+<li>Do NOT share API keys between users</li>
+</ul>
+<p><strong>For Public Web Applications</strong>:</p>
+<ul>
+<li>⚠️ <strong>NOT RECOMMENDED</strong>: Do not deploy with
+<code>show_api_config = TRUE</code> publicly</li>
+<li>If you must deploy publicly, consider these alternatives:
+<ol style="list-style-type: decimal">
+<li>Implement server-side API proxy (requires custom backend)</li>
+<li>Use authentication to limit access</li>
+<li>Set strict usage quotas and monitoring</li>
+</ol></li>
+</ul>
+</div>
+<div id="api-key-storage-locations" class="section level4">
+<h4>API Key Storage Locations</h4>
+<ol style="list-style-type: decimal">
+<li><strong><code>.Renviron</code> file</strong> (Recommended for
+personal use):
+<ul>
+<li>Location: <code>~/.Renviron</code> (user home directory)</li>
+<li>Security: Only accessible by your user account</li>
+<li>Persistence: Survives R session restarts</li>
+</ul></li>
+<li><strong>UI Input</strong> (Development only):
+<ul>
+<li>Location: Browser memory (temporary)</li>
+<li>Security: Lost when browser tab closes</li>
+<li>Persistence: No - must re-enter each session</li>
+</ul></li>
+<li><strong><code>api_key</code> argument</strong> (Advanced use):
+<ul>
+<li>Location: R script or code</li>
+<li>Security: ⚠️ Avoid - keys visible in code</li>
+<li>Persistence: Depends on where code is stored</li>
+</ul></li>
+</ol>
+</div>
+<div id="compliance-considerations" class="section level4">
+<h4>Compliance Considerations</h4>
+<p>If you’re working with sensitive data:</p>
+<ol style="list-style-type: decimal">
+<li>✅ Data structure and variable names are sent to AI provider</li>
+<li>✅ Statistical summaries may be sent</li>
+<li>⚠️ Avoid including actual data values in questions</li>
+<li>⚠️ Review your organization’s AI usage policy</li>
+<li>⚠️ Consider data anonymization before analysis</li>
+</ol>
+</div>
+</div>
+<div id="recommended-security-setup" class="section level3">
+<h3>Recommended Security Setup</h3>
+<p><strong>For Maximum Security</strong>:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># 1. Store API key in .Renviron (never in code)</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">edit_r_environ</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co"># Add: ANTHROPIC_API_KEY=your_key</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co"># 2. Use show_api_config = FALSE in production</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="fu">aiAssistantUI</span>(<span class="st">&quot;ai&quot;</span>, <span class="at">show_api_config =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="co"># 3. Never commit .Renviron to version control</span></span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a><span class="co"># Add to .gitignore:</span></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a><span class="co"># .Renviron</span></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a><span class="co"># .Renviron.local</span></span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a></span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a><span class="co"># 4. Rotate API keys regularly (every 90 days recommended)</span></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a></span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a><span class="co"># 5. Monitor API usage through provider&#39;s dashboard</span></span></code></pre></div>
+</div>
+</div>
+<div id="support" class="section level2">
+<h2>Support</h2>
+<p>For issues or feature requests, please file an issue at: <a href="https://github.com/jinseob2kim/jsmodule/issues" class="uri">https://github.com/jinseob2kim/jsmodule/issues</a></p>
+</div>
+<div id="license" class="section level2">
+<h2>License</h2>
+<p>Same as jsmodule package license.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
